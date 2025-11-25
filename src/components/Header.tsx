@@ -1,8 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Heart, Search, User, Phone, Mail, LogOut } from "lucide-react";
+import { ShoppingCart, Heart, Search, User, Phone, Mail, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -134,33 +140,50 @@ export const Header = () => {
           <ul className="flex items-center gap-1">
             <li>
               <Button variant="ghost" className="rounded-none h-12" asChild>
-                <Link to="/shop">All Products</Link>
+                <Link to="/">Home</Link>
               </Button>
             </li>
             <li>
               <Button variant="ghost" className="rounded-none h-12" asChild>
-                <Link to="/shop/category/food-cupboard-15">Food Cupboard</Link>
+                <Link to="/shop">Shop By Category - All Products</Link>
               </Button>
             </li>
             <li>
               <Button variant="ghost" className="rounded-none h-12" asChild>
-                <Link to="/shop/category/beverages-16">Beverages</Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className="rounded-none h-12" asChild>
-                <Link to="/shop/category/frozen-foods-17">Frozen Foods</Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className="rounded-none h-12" asChild>
-                <Link to="/shop/category/snacks-19">Snacks</Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className="rounded-none h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
                 <Link to="/fast-order">Fast Order</Link>
               </Button>
+            </li>
+            <li>
+              <Button variant="ghost" className="rounded-none h-12" asChild>
+                <a href="https://www.cnfoods.co.uk/new-customer-signup" target="_blank" rel="noopener noreferrer">
+                  New Customer Signup
+                </a>
+              </Button>
+            </li>
+            <li>
+              <Button variant="ghost" className="rounded-none h-12" asChild>
+                <a href="https://www.cnfoods.co.uk/new-supplier-signup" target="_blank" rel="noopener noreferrer">
+                  New Supplier Signup
+                </a>
+              </Button>
+            </li>
+            <li>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="rounded-none h-12">
+                    Get in Touch
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover">
+                  <DropdownMenuItem asChild>
+                    <Link to="/contact-us" className="cursor-pointer">Contact Us</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/customer-services" className="cursor-pointer">Customer Services</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </li>
           </ul>
         </div>

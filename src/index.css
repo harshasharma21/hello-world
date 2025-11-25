@@ -8,57 +8,57 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 78 35% 98%;
-    --foreground: 78 20% 15%;
+    --background: 132 15% 98%;
+    --foreground: 132 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 78 20% 15%;
+    --card-foreground: 132 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 78 20% 15%;
+    --popover-foreground: 132 20% 15%;
 
-    --primary: 78 51% 56%;
+    --primary: 132 29% 31%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 78 40% 75%;
-    --secondary-foreground: 78 60% 20%;
+    --secondary: 132 25% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 78 30% 95%;
-    --muted-foreground: 78 15% 40%;
+    --muted: 132 15% 95%;
+    --muted-foreground: 132 15% 40%;
 
-    --accent: 75 45% 65%;
-    --accent-foreground: 78 60% 15%;
+    --accent: 130 28% 40%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 78 25% 88%;
-    --input: 78 25% 92%;
-    --ring: 78 51% 56%;
+    --border: 132 15% 88%;
+    --input: 132 15% 92%;
+    --ring: 132 29% 31%;
 
     --radius: 0.5rem;
     
-    /* #a7c957 Palette Design tokens */
-    --pastel-green: 78 51% 56%;
-    --pastel-mint: 78 40% 75%;
-    --pastel-sage: 78 35% 65%;
-    --soft-lime: 78 51% 85%;
-    --neutral-50: 78 30% 98%;
-    --neutral-100: 78 30% 95%;
-    --neutral-200: 78 25% 88%;
-    --neutral-700: 78 20% 30%;
-    --neutral-800: 78 25% 20%;
-    --neutral-900: 78 25% 15%;
+    /* #386641 Palette Design tokens */
+    --pastel-green: 132 29% 31%;
+    --pastel-mint: 132 25% 45%;
+    --pastel-sage: 132 22% 38%;
+    --soft-lime: 132 20% 55%;
+    --neutral-50: 132 15% 98%;
+    --neutral-100: 132 15% 95%;
+    --neutral-200: 132 15% 88%;
+    --neutral-700: 132 20% 30%;
+    --neutral-800: 132 25% 20%;
+    --neutral-900: 132 25% 15%;
     
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--pastel-mint)) 100%);
     --gradient-card: linear-gradient(180deg, hsl(var(--neutral-50)) 0%, hsl(0 0% 100%) 100%);
     
     /* Shadows with green tint */
-    --shadow-sm: 0 1px 2px 0 hsl(78 25% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(78 25% 15% / 0.1), 0 2px 4px -1px hsl(78 25% 15% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(78 25% 15% / 0.1), 0 4px 6px -2px hsl(78 25% 15% / 0.05);
-    --shadow-hover: 0 20px 25px -5px hsl(78 51% 56% / 0.2), 0 10px 10px -5px hsl(78 51% 56% / 0.1);
+    --shadow-sm: 0 1px 2px 0 hsl(132 25% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(132 25% 15% / 0.1), 0 2px 4px -1px hsl(132 25% 15% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(132 25% 15% / 0.1), 0 4px 6px -2px hsl(132 25% 15% / 0.05);
+    --shadow-hover: 0 20px 25px -5px hsl(132 29% 31% / 0.2), 0 10px 10px -5px hsl(132 29% 31% / 0.1);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -84,45 +84,45 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 78 25% 10%;
-    --foreground: 78 20% 98%;
+    --background: 132 25% 10%;
+    --foreground: 132 20% 98%;
 
-    --card: 78 25% 12%;
-    --card-foreground: 78 20% 98%;
+    --card: 132 25% 12%;
+    --card-foreground: 132 20% 98%;
 
-    --popover: 78 25% 12%;
-    --popover-foreground: 78 20% 98%;
+    --popover: 132 25% 12%;
+    --popover-foreground: 132 20% 98%;
 
-    --primary: 78 45% 50%;
+    --primary: 132 29% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 78 35% 40%;
+    --secondary: 132 25% 28%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 78 25% 18%;
-    --muted-foreground: 78 15% 70%;
+    --muted: 132 25% 18%;
+    --muted-foreground: 132 15% 70%;
 
-    --accent: 75 40% 45%;
+    --accent: 130 25% 32%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 78 25% 22%;
-    --input: 78 25% 20%;
-    --ring: 78 45% 50%;
+    --border: 132 25% 22%;
+    --input: 132 25% 20%;
+    --ring: 132 29% 35%;
     
-    --pastel-green: 78 45% 50%;
-    --neutral-50: 78 25% 18%;
-    --neutral-900: 78 20% 98%;
-    --sidebar-background: 78 25% 12%;
-    --sidebar-foreground: 78 20% 95%;
-    --sidebar-primary: 78 45% 50%;
+    --pastel-green: 132 29% 35%;
+    --neutral-50: 132 25% 18%;
+    --neutral-900: 132 20% 98%;
+    --sidebar-background: 132 25% 12%;
+    --sidebar-foreground: 132 20% 95%;
+    --sidebar-primary: 132 29% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 78 25% 18%;
-    --sidebar-accent-foreground: 78 20% 95%;
-    --sidebar-border: 78 25% 20%;
-    --sidebar-ring: 78 45% 50%;
+    --sidebar-accent: 132 25% 18%;
+    --sidebar-accent-foreground: 132 20% 95%;
+    --sidebar-border: 132 25% 20%;
+    --sidebar-ring: 132 29% 35%;
   }
 }
 
