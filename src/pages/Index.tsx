@@ -7,10 +7,7 @@ import { Footer } from "@/components/Footer";
 import { categories } from "@/data/mockData";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import foodCupboardImg from "@/assets/category-food-cupboard.jpg";
-import beveragesImg from "@/assets/category-beverages.jpg";
-import frozenFoodsImg from "@/assets/category-frozen-foods.jpg";
-import snacksImg from "@/assets/category-snacks.jpg";
+import { categoryImages } from "@/utils/imageHelper";
 
 const Index = () => {
   return (
@@ -27,10 +24,10 @@ const Index = () => {
           >
             <CarouselContent>
               {[
-                { img: foodCupboardImg, category: categories.find(c => c.slug === "food-cupboard")! },
-                { img: beveragesImg, category: categories.find(c => c.slug === "beverages")! },
-                { img: frozenFoodsImg, category: categories.find(c => c.slug === "frozen-foods")! },
-                { img: snacksImg, category: categories.find(c => c.slug === "snacks")! }
+                { img: categoryImages["category-food-cupboard"], category: categories.find(c => c.slug === "food-cupboard")! },
+                { img: categoryImages["category-beverages"], category: categories.find(c => c.slug === "beverages")! },
+                { img: categoryImages["category-frozen-foods"], category: categories.find(c => c.slug === "frozen-foods")! },
+                { img: categoryImages["category-snacks"], category: categories.find(c => c.slug === "snacks")! }
               ].map((item, index) => (
                 <CarouselItem key={index}>
                   <div className="relative h-[400px] md:h-[500px] lg:h-[600px]">
@@ -114,13 +111,6 @@ const Index = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
               {categories.filter(cat => !cat.parentId).map((category) => {
-                const categoryImages: Record<string, string> = {
-                  "food-cupboard": foodCupboardImg,
-                  "beverages": beveragesImg,
-                  "frozen-foods": frozenFoodsImg,
-                  "snacks": snacksImg
-                };
-                
                 return (
                   <Link
                     key={category.id}
@@ -129,7 +119,7 @@ const Index = () => {
                     <Card className="group overflow-hidden hover:shadow-elegant-hover transition-smooth cursor-pointer h-full">
                       <div className="aspect-[16/10] relative overflow-hidden">
                         <img 
-                          src={categoryImages[category.slug]} 
+                          src={categoryImages[`category-${category.slug}`]} 
                           alt={category.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
                         />

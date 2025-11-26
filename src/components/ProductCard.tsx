@@ -8,27 +8,11 @@ import { Product } from "@/types/product";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
-import passataImg from "@/assets/product-passata.jpg";
-import pestoImg from "@/assets/product-pesto.jpg";
-import pastaImg from "@/assets/product-pasta.jpg";
-import orangeJuiceImg from "@/assets/product-orange-juice.jpg";
-import waterImg from "@/assets/product-water.jpg";
-import colaImg from "@/assets/product-cola.jpg";
-import chipsImg from "@/assets/product-chips.jpg";
+import { productImages } from "@/utils/imageHelper";
 
 interface ProductCardProps {
   product: Product;
 }
-
-const productImages: Record<string, string> = {
-  "product-passata": passataImg,
-  "product-pesto": pestoImg,
-  "product-pasta": pastaImg,
-  "product-orange-juice": orangeJuiceImg,
-  "product-water": waterImg,
-  "product-cola": colaImg,
-  "product-chips": chipsImg,
-};
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();

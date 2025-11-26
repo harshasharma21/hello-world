@@ -1,4 +1,7 @@
-project_id = "ateganpxmtcqbcmenzoe"
+project_id = "xiztfbqekscdtztaoqdo"
 
 [functions.import-data]
+verify_jwt = false
+
+[functions.upload-images]
 verify_jwt = false

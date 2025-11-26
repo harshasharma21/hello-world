@@ -52,6 +52,51 @@ export type Database = {
           },
         ]
       }
+      images: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          filename: string
+          id: string
+          product_id: string | null
+          storage_path: string
+          type: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          filename: string
+          id?: string
+          product_id?: string | null
+          storage_path: string
+          type: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          filename?: string
+          id?: string
+          product_id?: string | null
+          storage_path?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand: string | null

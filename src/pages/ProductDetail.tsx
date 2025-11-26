@@ -11,23 +11,7 @@ import { mockProducts, categories } from "@/data/mockData";
 import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import passataImg from "@/assets/product-passata.jpg";
-import pestoImg from "@/assets/product-pesto.jpg";
-import pastaImg from "@/assets/product-pasta.jpg";
-import orangeJuiceImg from "@/assets/product-orange-juice.jpg";
-import waterImg from "@/assets/product-water.jpg";
-import colaImg from "@/assets/product-cola.jpg";
-import chipsImg from "@/assets/product-chips.jpg";
-
-const productImages: Record<string, string> = {
-  "product-passata": passataImg,
-  "product-pesto": pestoImg,
-  "product-pasta": pastaImg,
-  "product-orange-juice": orangeJuiceImg,
-  "product-water": waterImg,
-  "product-cola": colaImg,
-  "product-chips": chipsImg,
-};
+import { productImages } from "@/utils/imageHelper";
 
 const ProductDetail = () => {
   const { id } = useParams();
