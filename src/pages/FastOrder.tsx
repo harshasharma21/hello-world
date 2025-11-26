@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, ShoppingCart, CheckCircle2, XCircle, Download, Loader2, Sparkles } from "lucide-react";
+import { Upload, FileText, ShoppingCart, CheckCircle2, XCircle, Download, Loader2, Sparkles, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { mockProducts } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,8 @@ const FastOrder = () => {
   const [pastedText, setPastedText] = useState("");
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
   const [isAiParsing, setIsAiParsing] = useState(false);
+  const [manualSku, setManualSku] = useState("");
+  const [manualQuantity, setManualQuantity] = useState("1");
   const { addItem } = useCart();
 
   const handleParse = () => {
@@ -154,6 +157,48 @@ const FastOrder = () => {
     setPastedText("");
   };
 
+  const handleManualAdd = () => {
+    if (!manualSku.trim() || !manualQuantity) {
+      toast.error("Please enter SKU and quantity");
+      return;
+    }
+
+    const quantity = parseInt(manualQuantity);
+    if (isNaN(quantity) || quantity < 1) {
+      toast.error("Invalid quantity");
+      return;
+    }
+
+    const product = mockProducts.find(p => p.sku.toLowerCase() === manualSku.trim().toLowerCase());
+    
+    if (!product) {
+      toast.error(`SKU "${manualSku}" not found`);
+      return;
+    }
+
+    const existingItem = parsedItems.find(i => i.sku === product.sku);
+    
+    if (existingItem) {
+      setParsedItems(prev => prev.map(item => 
+        item.sku === product.sku 
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      ));
+      toast.success(`Updated ${product.name} quantity`);
+    } else {
+      setParsedItems(prev => [...prev, {
+        sku: product.sku,
+        quantity,
+        status: 'valid',
+        product
+      }]);
+      toast.success(`Added ${product.name} to order list`);
+    }
+
+    setManualSku("");
+    setManualQuantity("1");
+  };
+
   const downloadTemplate = () => {
     const template = "SKU,Quantity\nPAS-001,5\nPAS-002,10\nBEV-001,3";
     const blob = new Blob([template], { type: 'text/csv' });
@@ -190,7 +235,14 @@ const FastOrder = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Format:</h4>
+                  <h4 className="font-semibold mb-2">Manual Entry:</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Enter SKU and quantity one at a time in the Manual Entry section below.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Bulk Format:</h4>
                   <code className="block bg-neutral-100 p-3 rounded-md text-sm">
                     SKU QUANTITY<br/>
                     PAS-001 5<br/>
@@ -215,6 +267,61 @@ const FastOrder = () => {
               </CardContent>
             </Card>
 
+            {/* Manual Entry */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Manual Entry
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-sku">Product SKU</Label>
+                  <Input
+                    id="manual-sku"
+                    placeholder="e.g., PAS-001"
+                    value={manualSku}
+                    onChange={(e) => setManualSku(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="manual-quantity">Quantity</Label>
+                  <Input
+                    id="manual-quantity"
+                    type="number"
+                    min="1"
+                    placeholder="1"
+                    value={manualQuantity}
+                    onChange={(e) => setManualQuantity(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()}
+                  />
+                </div>
+
+                <Button onClick={handleManualAdd} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add to Order List
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or use bulk entry</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Use the section below for bulk entry via CSV or text paste
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mb-8">
             {/* Input */}
             <Card>
               <CardHeader>

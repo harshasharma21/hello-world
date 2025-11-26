@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Category from "./pages/Category";
@@ -15,6 +16,8 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import NewCustomerSignup from "./pages/NewCustomerSignup";
 import NewSupplierSignup from "./pages/NewSupplierSignup";
+import ContactUs from "./pages/ContactUs";
+import CustomerServices from "./pages/CustomerServices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,8 +28,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <CartProvider>
-          <Routes>
+        <WishlistProvider>
+          <CartProvider>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/shop/category/:slug" element={<Category />} />
@@ -38,12 +42,13 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/new-customer-signup" element={<NewCustomerSignup />} />
             <Route path="/new-supplier-signup" element={<NewSupplierSignup />} />
-            <Route path="/contact-us" element={<NotFound />} />
-            <Route path="/customer-services" element={<NotFound />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/customer-services" element={<CustomerServices />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </CartProvider>
+            </Routes>
+          </CartProvider>
+        </WishlistProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -6,15 +5,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart } from "lucide-react";
-import { mockProducts } from "@/data/mockData";
+import { useWishlist } from "@/context/WishlistContext";
 
 const Liked = () => {
-  // Mock liked products
-  const [likedProducts] = useState([
-    mockProducts[0],
-    mockProducts[2],
-    mockProducts[4],
-  ]);
+  const { items: likedProducts } = useWishlist();
 
   return (
     <div className="min-h-screen flex flex-col">

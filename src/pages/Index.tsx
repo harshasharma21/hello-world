@@ -139,7 +139,7 @@ const Index = () => {
                             {category.name}
                           </h3>
                           <p className="text-xs md:text-sm text-muted-foreground">
-                            {category.productCount} products
+                            {category.productCount} {category.productCount === 1 ? 'product' : 'products'}
                           </p>
                         </div>
                       </div>

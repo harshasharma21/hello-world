@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import passataImg from "@/assets/product-passata.jpg";
 import pestoImg from "@/assets/product-pesto.jpg";
 import pastaImg from "@/assets/product-pasta.jpg";
@@ -31,8 +32,9 @@ const productImages: Record<string, string> = {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   const [quantity, setQuantity] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
+  const isLiked = isInWishlist(product.id);
 
   const productImage = product.images[0] ? productImages[product.images[0]] || "/placeholder.svg" : "/placeholder.svg";
 
@@ -42,8 +44,13 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   const handleToggleLike = () => {
-    setIsLiked(!isLiked);
-    toast.success(isLiked ? "Removed from wishlist" : "Added to wishlist");
+    if (isLiked) {
+      removeFromWishlist(product.id);
+      toast.success("Removed from wishlist");
+    } else {
+      addToWishlist(product);
+      toast.success("Added to wishlist");
+    }
   };
 
   return (

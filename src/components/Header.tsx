@@ -4,22 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { MobileMenu } from "@/components/MobileMenu";
 
 export const Header = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { totalItems } = useCart();
+  const { totalItems: wishlistTotal } = useWishlist();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -75,11 +80,16 @@ export const Header = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8" 
+                className="relative h-8 w-8" 
                 asChild
               >
                 <Link to="/liked">
                   <Heart className="h-4 w-4" />
+                  {wishlistTotal > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                      {wishlistTotal}
+                    </Badge>
+                  )}
                   <span className="sr-only">Favorites</span>
                 </Link>
               </Button>
@@ -157,76 +167,90 @@ export const Header = () => {
 
         {/* Mobile Search */}
         <div className="md:hidden mt-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="pl-9 pr-4 h-10 w-full text-sm"
-            />
+          <div className="flex items-center gap-2">
+            <MobileMenu user={user} />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="pl-9 pr-4 h-10 w-full text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="overflow-x-auto">
+      <nav className="overflow-x-auto hidden md:block">
         <div className="container mx-auto px-4">
-          <ul className="flex items-center justify-center gap-1 min-w-max md:min-w-0">
-            <li>
-              <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                <Link to="/">Home</Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                <Link to="/shop">Shop</Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                <Link to="/fast-order">Fast Order</Link>
-              </Button>
-            </li>
-            {!user && (
-              <>
-                {/* <li>
+          <NavigationMenu className="justify-center max-w-full">
+            <NavigationMenuList className="flex-wrap justify-center gap-1">
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
                   <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                    <Link to="/auth">Sign In</Link>
+                    <Link to="/">Home</Link>
                   </Button>
-                </li> */}
-                <li>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
                   <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                    <Link to="/new-customer-signup">New Customer Signup</Link>
+                    <Link to="/shop">Shop</Link>
                   </Button>
-                </li>
-                <li>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
                   <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
-                    <Link to="/new-supplier-signup">New Supplier Signup</Link>
+                    <Link to="/fast-order">Fast Order</Link>
                   </Button>
-                </li>
-              </>
-            )}
-            <li>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap">
-                    Get in Touch
-                    <ChevronDown className="ml-1 h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover">
-                  <DropdownMenuItem asChild>
-                    <Link to="/contact-us" className="cursor-pointer">Contact Us</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/customer-services" className="cursor-pointer">Customer Services</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
-          </ul>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              {!user && (
+                <>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
+                        <Link to="/new-customer-signup">New Customer Signup</Link>
+                      </Button>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Button variant="ghost" className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap" asChild>
+                        <Link to="/new-supplier-signup">New Supplier Signup</Link>
+                      </Button>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </>
+              )}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="rounded-sm h-10 md:h-12 text-sm whitespace-nowrap">
+                  Get in Touch
+                </NavigationMenuTrigger>
+                <NavigationMenuContent className="min-w-[200px]">
+                  <ul className="p-2 space-y-1">
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/contact-us" className="block px-4 py-2 hover:bg-muted rounded-sm transition-colors">
+                          Contact Us
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/customer-services" className="block px-4 py-2 hover:bg-muted rounded-sm transition-colors">
+                          Customer Services
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
-        <br></br>
       </nav>
     </header>
   );
