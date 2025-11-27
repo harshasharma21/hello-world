@@ -1,166 +1,214 @@
-import React from "react";
+import React, { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Package,
-  CreditCard,
-  Truck,
-  RefreshCw,
-  Shield,
-  HelpCircle,
-  Phone,
-  Mail,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Link } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const CustomerServices: React.FC = () => {
+  const [shopName, setShopName] = useState("");
+  const [accountCode, setAccountCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [creditReason, setCreditReason] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [skus, setSkus] = useState("");
+  const [salesRep, setSalesRep] = useState("");
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Customer services form submitted");
+    toast.success("Your request has been submitted. We'll get back to you soon!");
+    // Reset form
+    setShopName("");
+    setAccountCode("");
+    setEmail("");
+    setInvoiceDate("");
+    setCreditReason("");
+    setAdditionalInfo("");
+    setSkus("");
+    setSalesRep("");
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <Header />
 
       <main className="flex-1">
-        <section className="bg-white">
-          {/* CENTER CONTENT */}
-          <div className="mx-auto flex justify-center md:justify-center max-w-6xl px-4 py-10 md:px-6 md:py-12">
+        <div className="container mx-auto px-4 py-8 md:py-12 flex justify-center">
+          <div className="w-full max-w-2xl">
+            <Card className="shadow-sm">
+              <CardContent className="p-6 md:p-8">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  Sales Requests
+                </h1>
+                
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <Label htmlFor="shopName" className="text-sm font-medium">
+                      Customer Shop Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input 
+                      id="shopName" 
+                      value={shopName}
+                      onChange={(e) => setShopName(e.target.value)}
+                      placeholder="Your shop name"
+                      required
+                      className="mt-1.5"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1 text-right">{shopName.length}/255</p>
+                  </div>
 
-            <div className="w-full md:w-[55%]">
-              <Card className="sticky top-20 shadow-md">
-                <CardContent className="p-5">
-                  <h2 className="text-2xl font-semibold text-slate-900">
-                    Sales Requests
-                  </h2>
-                  <form
-                    onSubmit={handleSubmit}
-                    className="mt-4 space-y-4 text-sm"
-                  >
+                  <div>
+                    <Label htmlFor="accountCode" className="text-sm font-medium">
+                      Customer Account Code <span className="text-destructive">*</span>
+                    </Label>
+                    <Input 
+                      id="accountCode" 
+                      value={accountCode}
+                      onChange={(e) => setAccountCode(e.target.value)}
+                      placeholder="Your account code"
+                      required
+                      className="mt-1.5"
+                    />
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="company">Company Shop Name</Label>
-                      <Input id="company" name="company" placeholder="Your business name" />
-                    </div>
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Customer Email Address
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      If you would like to receive updates via email
+                    </p>
+                    <Input 
+                      id="email" 
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="mt-1.5"
+                    />
+                  </div>
 
-                    <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input id="email" name="email" placeholder="Your Email Address" type="email" autoComplete="email" required />
-                      </div>
+                  <div>
+                    <Label htmlFor="invoiceDate" className="text-sm font-medium">
+                      Invoice Date
+                    </Label>
+                    <Input 
+                      id="invoiceDate" 
+                      type="date"
+                      value={invoiceDate}
+                      onChange={(e) => setInvoiceDate(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="enquiryType">Enquiry type</Label>
-                      <select
-                        id="enquiryType"
-                        name="enquiryType"
-                        className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                        required
-                      >
-                        <option value="">Please select</option>
-                        <option value="order">Order / delivery</option>
-                        <option value="returns">Returns / damages</option>
-                        <option value="account">Account / payment</option>
-                        <option value="product">Product information</option>
-                        <option value="general">General enquiry</option>
-                        <option value="supplier">New supplier enquiry</option>
-                      </select>
-                    </div>
+                  <div>
+                    <Label htmlFor="creditReason" className="text-sm font-medium">
+                      Credit Reason <span className="text-destructive">*</span>
+                    </Label>
+                    <Select value={creditReason} onValueChange={setCreditReason} required>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select a reason" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="missing-delivery">Missing on Delivery</SelectItem>
+                        <SelectItem value="mispick">Mispick</SelectItem>
+                        <SelectItem value="damaged">Damaged</SelectItem>
+                        <SelectItem value="short-dated">Short Dated</SelectItem>
+                        <SelectItem value="quality-issue">Quality Issue</SelectItem>
+                        <SelectItem value="pricing-error">Pricing Error</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="accountType">
-                        Customer / supplier type
-                      </Label>
-                      <select
-                        id="accountType"
-                        name="accountType"
-                        className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                      >
-                        <option value="">Please select</option>
-                        <option value="trade">Trade customer</option>
-                        <option value="retail">Retail customer</option>
-                        <option value="supplier">Supplier</option>
-                        <option value="prospect">Prospective customer</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
+                  <div>
+                    <Label htmlFor="additionalInfo" className="text-sm font-medium">
+                      Additional Info
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      SKU of mispick or missing on delivery if you don't want to upload a picture.
+                    </p>
+                    <Textarea 
+                      id="additionalInfo" 
+                      value={additionalInfo}
+                      onChange={(e) => setAdditionalInfo(e.target.value)}
+                      placeholder="Additional details..."
+                      className="mt-1.5 min-h-[100px]"
+                    />
+                  </div>
 
-                    
+                  <div>
+                    <Label htmlFor="skus" className="text-sm font-medium">
+                      SKUS <span className="text-destructive">*</span>
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Found on left hand side of invoice next to product name
+                    </p>
+                    <Input 
+                      id="skus" 
+                      value={skus}
+                      onChange={(e) => setSkus(e.target.value)}
+                      placeholder="Enter SKU(s)"
+                      required
+                      className="mt-1.5"
+                    />
+                  </div>
 
-                    <div className="flex flex-col gap-3 md:flex-row">
-                      <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="firstName">First name</Label>
-                        <Input id="firstName" name="firstName" autoComplete="given-name" required />
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="lastName">Last name</Label>
-                        <Input id="lastName" name="lastName" autoComplete="family-name" required />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 md:flex-row">
-                      
-                      <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="phone">Contact number</Label>
-                        <Input id="phone" name="phone" type="tel" placeholder="+44 ..." />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 md:flex-row">
-                      <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="accountNumber">Account number (optional)</Label>
-                        <Input id="accountNumber" name="accountNumber" placeholder="Optional" />
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <Label htmlFor="orderNumber">Order / invoice number</Label>
-                        <Input id="orderNumber" name="orderNumber" placeholder="Optional" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="subject">Subject</Label>
-                      <Input id="subject" name="subject" placeholder="Brief summary" required />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="message">Message</Label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        rows={5}
-                        placeholder="Include relevant details such as product codes, quantities, delivery dates, etc."
-                        required
+                  <div>
+                    <Label htmlFor="picture" className="text-sm font-medium">
+                      Picture <span className="text-destructive">*</span>
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-1.5">
+                      If missing please take picture of line on invoice
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-1.5">
+                      Need a clear picture of barcode and product as well as damage / mould
+                    </p>
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors">
+                      <Input 
+                        id="picture" 
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
                       />
+                      <label htmlFor="picture" className="cursor-pointer">
+                        <p className="text-sm text-muted-foreground">
+                          Choose a file to upload or drag and drop here
+                        </p>
+                      </label>
                     </div>
+                  </div>
 
-                    <div className="space-y-2 rounded-md bg-slate-50 p-3 text-[11px] text-slate-600">
-                      <p>
-                        By submitting this form you agree that we may use the
-                        details you provide to respond to your enquiry. Your data
-                        will be handled in line with our privacy policy.
-                      </p>
-                    </div>
+                  <div>
+                    <Label htmlFor="salesRep" className="text-sm font-medium">
+                      Your direct sales representative
+                    </Label>
+                    <Select value={salesRep} onValueChange={setSalesRep}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select your sales rep" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rep1">Sales Rep 1</SelectItem>
+                        <SelectItem value="rep2">Sales Rep 2</SelectItem>
+                        <SelectItem value="rep3">Sales Rep 3</SelectItem>
+                        <SelectItem value="unknown">I don't know</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <Button type="submit" className="mt-1 w-full rounded-full text-sm font-medium">
-                      Send enquiry
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
+                  <Button type="submit" className="w-full" size="lg">
+                    Submit
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </div>
-        </section>
+        </div>
       </main>
 
       <Footer />
