@@ -153,6 +153,15 @@ const Shop = () => {
             return (
               <div key={category.id} className="space-y-0.5">
                 <div className="flex items-center">
+                  <div 
+                    className={`flex items-center space-x-2 flex-1 py-1.5 px-2 rounded cursor-pointer transition-colors ${
+                      isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                    }`}
+                    onClick={() => handleCategorySelect(category.slug)}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <span className="text-sm">{category.name}</span>
+                  </div>
                   {hasSubcategories && (
                     <button
                       onClick={() => toggleCategory(category.id)}
@@ -165,16 +174,6 @@ const Shop = () => {
                       )}
                     </button>
                   )}
-                  {!hasSubcategories && <div className="w-5" />}
-                  <div 
-                    className={`flex items-center space-x-2 flex-1 py-1.5 px-2 rounded cursor-pointer transition-colors ${
-                      isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                    }`}
-                    onClick={() => handleCategorySelect(category.slug)}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                    <span className="text-sm">{category.name}</span>
-                  </div>
                 </div>
 
                 {/* Level 2 Subcategories */}
@@ -190,6 +189,15 @@ const Shop = () => {
                       return (
                         <div key={subcat.id} className="space-y-0.5">
                           <div className="flex items-center">
+                            <div 
+                              className={`flex items-center space-x-2 flex-1 py-1 px-2 rounded cursor-pointer transition-colors ${
+                                isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                              }`}
+                              onClick={() => handleCategorySelect(subcat.slug)}
+                            >
+                              <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                              <span className="text-sm text-muted-foreground">{subcat.name}</span>
+                            </div>
                             {hasLevel3 && (
                               <button
                                 onClick={() => toggleCategory(subcat.id)}
@@ -202,16 +210,6 @@ const Shop = () => {
                                 )}
                               </button>
                             )}
-                            {!hasLevel3 && <div className="w-5" />}
-                            <div 
-                              className={`flex items-center space-x-2 flex-1 py-1 px-2 rounded cursor-pointer transition-colors ${
-                                isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                              }`}
-                              onClick={() => handleCategorySelect(subcat.slug)}
-                            >
-                              <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                              <span className="text-sm text-muted-foreground">{subcat.name}</span>
-                            </div>
                           </div>
 
                           {/* Level 3 Sub-subcategories */}

@@ -159,6 +159,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string | null
           company_name: string | null
           created_at: string | null
           full_name: string | null
@@ -167,6 +168,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          account_type?: string | null
           company_name?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          account_type?: string | null
           company_name?: string | null
           created_at?: string | null
           full_name?: string | null

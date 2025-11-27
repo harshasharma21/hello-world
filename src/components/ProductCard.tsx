@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { productImages } from "@/utils/imageHelper";
+import { buildProductPath } from "@/utils/productRoutes";
 
 interface ProductCardProps {
   product: Product;
@@ -76,7 +77,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         <h3 className="font-semibold text-base mb-1 line-clamp-2 min-h-[3rem]">
-          <Link to={`/product/${product.id}`} className="hover:text-primary transition-smooth">
+          <Link to={buildProductPath(product)} className="hover:text-primary transition-smooth">
             {product.name}
           </Link>
         </h3>

@@ -8,6 +8,7 @@ import { Product } from "@/types/product";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { productImages } from "@/utils/imageHelper";
+import { buildProductPath } from "@/utils/productRoutes";
 
 interface ProductCardListProps {
   product: Product;
@@ -33,7 +34,7 @@ export const ProductCardList = ({ product }: ProductCardListProps) => {
   return (
     <Card className="group overflow-hidden hover:shadow-elegant-hover transition-smooth">
       <CardContent className="p-4 flex gap-4">
-        <Link to={`/product/${product.id}`} className="relative w-32 h-32 flex-shrink-0 overflow-hidden bg-neutral-100 rounded-md">
+        <Link to={buildProductPath(product)} className="relative w-32 h-32 flex-shrink-0 overflow-hidden bg-neutral-100 rounded-md">
           <img
             src={productImage}
             alt={product.name}
@@ -60,7 +61,7 @@ export const ProductCardList = ({ product }: ProductCardListProps) => {
           </div>
 
           <h3 className="font-semibold text-base mb-1">
-            <Link to={`/product/${product.id}`} className="hover:text-primary transition-smooth">
+            <Link to={buildProductPath(product)} className="hover:text-primary transition-smooth">
               {product.name}
             </Link>
           </h3>

@@ -76,24 +76,14 @@ const ProductDetail = () => {
               </Link>
               {category && (
                 <>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <Link
-                    to={`/shop/category/${category.slug}-${category.id}`}
-                    className="text-muted-foreground hover:text-foreground transition-smooth"
-                  >
-                    {category.name}
-                  </Link>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{category.name}</span>
                 </>
               )}
               {subcategory && (
                 <>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <Link
-                    to={`/shop/category/${subcategory.slug}-${subcategory.id}`}
-                    className="text-muted-foreground hover:text-foreground transition-smooth"
-                  >
-                    {subcategory.name}
-                  </Link>
+                  <span className="text-muted-foreground">{subcategory.name}</span>
                 </>
               )}
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
