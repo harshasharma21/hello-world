@@ -3,7 +3,9 @@ const STORAGE_BASE_URL = 'https://xiztfbqekscdtztaoqdo.supabase.co/storage/v1/ob
 
 export const getImageUrl = (filename: string, type: 'product' | 'category' = 'product'): string => {
   const folder = type === 'product' ? 'products' : 'categorys';
-  return `${STORAGE_BASE_URL}/${folder}/${filename}`;
+  // Add .jpg extension if not present
+  const fullFilename = filename.includes('.') ? filename : `${filename}.jpg`;
+  return `${STORAGE_BASE_URL}/${folder}/${fullFilename}`;
 };
 
 // Product image URLs

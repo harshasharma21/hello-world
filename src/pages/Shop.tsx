@@ -33,7 +33,23 @@ const Shop = () => {
     searchParams.get("tags")?.split(",").filter(Boolean) || []
   );
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "featured");
-  const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const [openCategories, setOpenCategories] = useState<string[]>(() => {
+    // Auto-expand categories if one is selected from URL
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      const category = categories.find(c => c.slug === categoryParam);
+      if (category) {
+        const expandedIds: string[] = [];
+        let current = category;
+        while (current?.parentId) {
+          expandedIds.push(current.parentId);
+          current = categories.find(c => c.id === current?.parentId) as typeof category;
+        }
+        return expandedIds;
+      }
+    }
+    return [];
+  });
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">(
     (searchParams.get("view") as "grid" | "list") || "grid"
@@ -453,51 +469,62 @@ const Shop = () => {
 
             {/* Pagination */}
             {sortedProducts.length > 0 && totalPages > 1 && (
-              <div className="mt-8">
+              <div className="mt-12 space-y-4">
+                <div className="text-center text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </div>
                 <Pagination>
-                  <PaginationContent>
+                  <PaginationContent className="flex-wrap gap-1">
                     <PaginationItem>
                       <PaginationPrevious 
                         onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10"}
                       />
                     </PaginationItem>
                     
                     {[...Array(totalPages)].map((_, i) => {
                       const page = i + 1;
-                      if (
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = 
                         page === 1 ||
                         page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1)
-                      ) {
+                        (page >= currentPage - 2 && page <= currentPage + 2);
+                      
+                      // Show ellipsis
+                      const showEllipsisBefore = page === currentPage - 3 && currentPage > 4;
+                      const showEllipsisAfter = page === currentPage + 3 && currentPage < totalPages - 3;
+                      
+                      if (showEllipsisBefore || showEllipsisAfter) {
                         return (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => handlePageChange(page)}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      } else if (
-                        page === currentPage - 2 ||
-                        page === currentPage + 2
-                      ) {
-                        return (
-                          <PaginationItem key={page}>
+                          <PaginationItem key={`ellipsis-${page}`}>
                             <PaginationEllipsis />
                           </PaginationItem>
                         );
                       }
-                      return null;
+                      
+                      if (!showPage) return null;
+                      
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={currentPage === page}
+                            className={`cursor-pointer min-w-[40px] ${
+                              currentPage === page 
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                : "hover:bg-primary/10"
+                            }`}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
                     })}
 
                     <PaginationItem>
                       <PaginationNext
                         onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10"}
                       />
                     </PaginationItem>
                   </PaginationContent>
