@@ -13,6 +13,25 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { productImages } from "@/utils/imageHelper";
 
+// Build link path for a category in the breadcrumb
+const buildCategoryPath = (targetCategory: typeof categories[0] | null | undefined) => {
+  if (!targetCategory) return '/shop';
+  
+  const chain: string[] = [];
+  let current: typeof categories[0] | undefined = targetCategory;
+  
+  while (current) {
+    chain.unshift(current.slug);
+    if (current.parentId) {
+      current = categories.find(c => c.id === current.parentId);
+    } else {
+      break;
+    }
+  }
+  
+  return `/shop/${chain.join('/')}`;
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -77,13 +96,23 @@ const ProductDetail = () => {
               {category && (
                 <>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{category.name}</span>
+              <Link
+                to={buildCategoryPath(category)}
+                className="text-muted-foreground hover:text-foreground transition-smooth"
+              >
+                {category.name}
+              </Link>
                 </>
               )}
               {subcategory && (
                 <>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{subcategory.name}</span>
+                  <Link
+                    to={buildCategoryPath(subcategory)}
+                    className="text-muted-foreground hover:text-foreground transition-smooth"
+                  >
+                    {subcategory.name}
+                  </Link>
                 </>
               )}
               <ChevronRight className="h-4 w-4 text-muted-foreground" />

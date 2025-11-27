@@ -39,6 +39,6 @@ export const buildProductPath = (product: Product): string => {
     }
   }
   
-  // Build the final path: /shop/category/subcategory/product/id
+  // Build the final path: /shop/category1/category2/product/id
   return `/shop/${pathSegments.join('/')}/product/${product.id}`;
 };

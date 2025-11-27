@@ -9,19 +9,27 @@ const Category = () => {
   const { "*": fullPath } = useParams();
   const navigate = useNavigate();
   
-  // Parse the path - can be category, category/subcategory, or category/subcategory/subsubcategory
+  // Parse the path - can be category, category/subcategory, or includes /product/id
   const pathParts = fullPath?.split('/').filter(Boolean) || [];
+  
+  // Check if this is a product detail page (has "product" in path)
+  const productIndex = pathParts.indexOf('product');
+  
+  // If it's a product page, redirect to ProductDetail (this shouldn't happen with proper routing)
+  if (productIndex !== -1) {
+    return null;
+  }
   
   // Get the last part of the path to find the current category
   const lastSlug = pathParts[pathParts.length - 1];
   
-  // Extract ID from slug if it follows the pattern: name-id
-  const categoryId = lastSlug?.split('-').pop() || '';
-  let category = categories.find(c => c.id === categoryId);
+  // Try to find by slug directly first
+  let category = categories.find(c => c.slug === lastSlug);
   
-  // If not found by ID, try to find by slug directly
-  if (!category) {
-    category = categories.find(c => c.slug === lastSlug);
+  // If not found by slug alone, try parsing slug-id format
+  if (!category && lastSlug) {
+    const categoryId = lastSlug.split('-').pop() || '';
+    category = categories.find(c => c.id === categoryId);
   }
 
   // Build full breadcrumb chain
@@ -76,7 +84,7 @@ const Category = () => {
     let current = targetCategory;
     
     while (current) {
-      chain.unshift(`${current.slug}-${current.id}`);
+      chain.unshift(current.slug);
       if (current.parentId) {
         current = categories.find(c => c.id === current.parentId) as typeof category;
       } else {
@@ -84,7 +92,7 @@ const Category = () => {
       }
     }
     
-    return `/shop/category/${chain.join('/')}`;
+    return `/shop/${chain.join('/')}`;
   };
 
   if (!category) {
