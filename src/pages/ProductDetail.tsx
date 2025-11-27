@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProductCard } from "@/components/ProductCard";
-import { mockProducts, categories } from "@/data/mockData";
+import { mockProducts, categories, tags } from "@/data/mockData";
 import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
@@ -173,6 +173,23 @@ const ProductDetail = () => {
               </div>
 
               <Separator />
+
+              {/* Tags */}
+              {product.tags && product.tags.length > 0 && (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tagId) => {
+                      const tag = tags.find(t => t.id === tagId);
+                      return tag ? (
+                        <Badge key={tagId} variant="secondary">
+                          {tag.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                  <Separator />
+                </>
+              )}
 
               {/* Quantity & Actions */}
               <div className="space-y-4">

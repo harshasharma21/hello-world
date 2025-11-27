@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
@@ -23,15 +24,36 @@ import {
 } from "@/components/ui/pagination";
 
 const Shop = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState("featured");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    searchParams.get("category") || null
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    searchParams.get("tags")?.split(",").filter(Boolean) || []
+  );
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "featured");
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    (searchParams.get("view") as "grid" | "list") || "grid"
+  );
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [currentPage, setCurrentPage] = useState(
+    parseInt(searchParams.get("page") || "1")
+  );
   const itemsPerPage = 32;
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedTags.length > 0) params.set("tags", selectedTags.join(","));
+    if (sortBy !== "featured") params.set("sort", sortBy);
+    if (viewMode !== "grid") params.set("view", viewMode);
+    if (searchQuery) params.set("search", searchQuery);
+    if (currentPage > 1) params.set("page", currentPage.toString());
+    setSearchParams(params, { replace: true });
+  }, [selectedCategory, selectedTags, sortBy, viewMode, searchQuery, currentPage]);
 
   const toggleCategory = (categoryId: string) => {
     setOpenCategories(prev =>
@@ -153,29 +175,24 @@ const Shop = () => {
             return (
               <div key={category.id} className="space-y-0.5">
                 <div 
-                  className="flex items-center"
-                  onMouseEnter={() => hasSubcategories && !openCategories.includes(category.id) && toggleCategory(category.id)}
+                  className={`flex items-center py-1.5 px-2 rounded cursor-pointer transition-colors ${
+                    isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                  }`}
+                  onClick={() => {
+                    handleCategorySelect(category.slug);
+                    if (hasSubcategories) toggleCategory(category.id);
+                  }}
                 >
-                  <div 
-                    className={`flex items-center space-x-2 flex-1 py-1.5 px-2 rounded cursor-pointer transition-colors ${
-                      isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                    }`}
-                    onClick={() => handleCategorySelect(category.slug)}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                    <span className="text-sm">{category.name}</span>
-                  </div>
+                  <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                  <span className="text-sm ml-2 flex-1">{category.name}</span>
                   {hasSubcategories && (
-                    <button
-                      onClick={() => toggleCategory(category.id)}
-                      className="p-1 hover:bg-muted rounded"
-                    >
+                    <div className="ml-auto">
                       {openCategories.includes(category.id) ? (
                         <ChevronDown className="h-3 w-3" />
                       ) : (
                         <ChevronRight className="h-3 w-3" />
                       )}
-                    </button>
+                    </div>
                   )}
                 </div>
 
@@ -191,30 +208,25 @@ const Shop = () => {
                       
                       return (
                         <div key={subcat.id} className="space-y-0.5">
-                           <div 
-                            className="flex items-center"
-                            onMouseEnter={() => hasLevel3 && !openCategories.includes(subcat.id) && toggleCategory(subcat.id)}
+                          <div 
+                            className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
+                              isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                            }`}
+                            onClick={() => {
+                              handleCategorySelect(subcat.slug);
+                              if (hasLevel3) toggleCategory(subcat.id);
+                            }}
                           >
-                            <div 
-                              className={`flex items-center space-x-2 flex-1 py-1 px-2 rounded cursor-pointer transition-colors ${
-                                isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                              }`}
-                              onClick={() => handleCategorySelect(subcat.slug)}
-                            >
-                              <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                              <span className="text-sm text-muted-foreground">{subcat.name}</span>
-                            </div>
+                            <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                            <span className="text-sm text-muted-foreground ml-2 flex-1">{subcat.name}</span>
                             {hasLevel3 && (
-                              <button
-                                onClick={() => toggleCategory(subcat.id)}
-                                className="p-1 hover:bg-muted rounded"
-                              >
+                              <div className="ml-auto">
                                 {openCategories.includes(subcat.id) ? (
                                   <ChevronDown className="h-3 w-3" />
                                 ) : (
                                   <ChevronRight className="h-3 w-3" />
                                 )}
-                              </button>
+                              </div>
                             )}
                           </div>
 
