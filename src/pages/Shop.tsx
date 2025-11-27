@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCardList } from "@/components/ProductCardList";
-import { ShopCarousel } from "@/components/ShopCarousel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { mockProducts, categories, tags } from "@/data/mockData";
 import { SlidersHorizontal, ChevronDown, ChevronRight, Grid3x3, List, Search } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Pagination,
   PaginationContent,
@@ -25,7 +23,7 @@ import {
 } from "@/components/ui/pagination";
 
 const Shop = () => {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("featured");
   const [openCategories, setOpenCategories] = useState<string[]>([]);
@@ -61,28 +59,27 @@ const Shop = () => {
     return slugs;
   };
 
-  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
-    const category = categories.find(cat => cat.slug === categorySlug);
-    if (!category) return;
-
-    const descendantSlugs = getAllDescendantSlugs(category.id);
-    
-    if (checked) {
-      setSelectedCategories(prev => [...new Set([...prev, ...descendantSlugs])]);
+  const handleCategorySelect = (categorySlug: string) => {
+    if (selectedCategory === categorySlug) {
+      setSelectedCategory(null);
     } else {
-      // When unchecking, only remove the category and its descendants
-      setSelectedCategories(prev => prev.filter(slug => !descendantSlugs.includes(slug)));
+      setSelectedCategory(categorySlug);
     }
+    setCurrentPage(1);
   };
 
   let filteredProducts = mockProducts;
 
-  // Filter by categories
-  if (selectedCategories.length > 0) {
-    filteredProducts = filteredProducts.filter(p => 
-      selectedCategories.includes(p.category) || 
-      selectedCategories.includes(p.subcategory || '')
-    );
+  // Filter by selected category (includes all descendants)
+  if (selectedCategory) {
+    const category = categories.find(cat => cat.slug === selectedCategory);
+    if (category) {
+      const descendantSlugs = getAllDescendantSlugs(category.id);
+      filteredProducts = filteredProducts.filter(p => 
+        descendantSlugs.includes(p.category) || 
+        descendantSlugs.includes(p.subcategory || '')
+      );
+    }
   }
 
   // Filter by tags
@@ -109,6 +106,8 @@ const Shop = () => {
         return b.price - a.price;
       case "name":
         return a.name.localeCompare(b.name);
+      case "newest":
+        return 0; // Would need created_at field
       default:
         return 0;
     }
@@ -127,164 +126,170 @@ const Shop = () => {
 
   const FilterContent = () => (
     <>
-      <div className="flex items-center gap-2 mb-4">
-        <SlidersHorizontal className="h-5 w-5" />
-        <h2 className="font-semibold text-lg">Filters</h2>
+      <div className="mb-6">
+        <h2 className="font-semibold text-lg mb-4">Categories</h2>
+        <div className="space-y-1">
+          {/* All Products option */}
+          <div 
+            className={`flex items-center space-x-2 py-1.5 px-2 rounded cursor-pointer transition-colors ${
+              selectedCategory === null ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+            }`}
+            onClick={() => {
+              setSelectedCategory(null);
+              setCurrentPage(1);
+            }}
+          >
+            <div className={`w-2 h-2 rounded-full ${selectedCategory === null ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+            <span className="text-sm font-medium">All Products</span>
+          </div>
+
+          {categories.filter(cat => !cat.parentId).map((category) => {
+            const level2Categories = getSubcategories(category.id);
+            const hasSubcategories = level2Categories.length > 0;
+            const isSelected = selectedCategory === category.slug;
+            const descendantSlugs = getAllDescendantSlugs(category.id);
+            const isChildSelected = selectedCategory && descendantSlugs.includes(selectedCategory);
+            
+            return (
+              <div key={category.id} className="space-y-0.5">
+                <div className="flex items-center">
+                  {hasSubcategories && (
+                    <button
+                      onClick={() => toggleCategory(category.id)}
+                      className="p-1 hover:bg-muted rounded"
+                    >
+                      {openCategories.includes(category.id) ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </button>
+                  )}
+                  {!hasSubcategories && <div className="w-5" />}
+                  <div 
+                    className={`flex items-center space-x-2 flex-1 py-1.5 px-2 rounded cursor-pointer transition-colors ${
+                      isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                    }`}
+                    onClick={() => handleCategorySelect(category.slug)}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <span className="text-sm">{category.name}</span>
+                  </div>
+                </div>
+
+                {/* Level 2 Subcategories */}
+                {hasSubcategories && openCategories.includes(category.id) && (
+                  <div className="ml-5 space-y-0.5">
+                    {level2Categories.map((subcat) => {
+                      const level3Categories = getSubcategories(subcat.id);
+                      const hasLevel3 = level3Categories.length > 0;
+                      const isSubSelected = selectedCategory === subcat.slug;
+                      const subDescendantSlugs = getAllDescendantSlugs(subcat.id);
+                      const isSubChildSelected = selectedCategory && subDescendantSlugs.includes(selectedCategory);
+                      
+                      return (
+                        <div key={subcat.id} className="space-y-0.5">
+                          <div className="flex items-center">
+                            {hasLevel3 && (
+                              <button
+                                onClick={() => toggleCategory(subcat.id)}
+                                className="p-1 hover:bg-muted rounded"
+                              >
+                                {openCategories.includes(subcat.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </button>
+                            )}
+                            {!hasLevel3 && <div className="w-5" />}
+                            <div 
+                              className={`flex items-center space-x-2 flex-1 py-1 px-2 rounded cursor-pointer transition-colors ${
+                                isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                              }`}
+                              onClick={() => handleCategorySelect(subcat.slug)}
+                            >
+                              <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                              <span className="text-sm text-muted-foreground">{subcat.name}</span>
+                            </div>
+                          </div>
+
+                          {/* Level 3 Sub-subcategories */}
+                          {hasLevel3 && openCategories.includes(subcat.id) && (
+                            <div className="ml-5 space-y-0.5">
+                              {level3Categories.map((subsubcat) => {
+                                const isSubSubSelected = selectedCategory === subsubcat.slug;
+                                return (
+                                  <div 
+                                    key={subsubcat.id} 
+                                    className={`flex items-center space-x-2 py-1 px-2 ml-5 rounded cursor-pointer transition-colors ${
+                                      isSubSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                                    }`}
+                                    onClick={() => handleCategorySelect(subsubcat.slug)}
+                                  >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isSubSubSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                                    <span className="text-sm text-muted-foreground">{subsubcat.name}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Categories */}
-        <div>
-          <h3 className="font-semibold mb-3">Categories</h3>
-          <div className="space-y-1">
-            {categories.filter(cat => !cat.parentId).map((category) => {
-              const level2Categories = getSubcategories(category.id);
-              const hasSubcategories = level2Categories.length > 0;
-              
-              return (
-                <div key={category.id} className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    {hasSubcategories ? (
-                      <button
-                        onClick={() => toggleCategory(category.id)}
-                        className="p-0 h-4 w-4 flex items-center justify-center"
-                      >
-                        {openCategories.includes(category.id) ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
-                      </button>
-                    ) : (
-                      <div className="w-4" />
-                    )}
-                    <Checkbox
-                      id={category.slug}
-                      checked={selectedCategories.includes(category.slug)}
-                      onCheckedChange={(checked) => handleCategoryChange(category.slug, checked as boolean)}
-                    />
-                    <Label
-                      htmlFor={category.slug}
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {category.name}
-                    </Label>
-                  </div>
+      <Separator />
 
-                  {/* Level 2 Subcategories */}
-                  {hasSubcategories && openCategories.includes(category.id) && (
-                    <div className="ml-6 space-y-1 mt-1">
-                      {level2Categories.map((subcat) => {
-                        const level3Categories = getSubcategories(subcat.id);
-                        const hasLevel3 = level3Categories.length > 0;
-                        
-                        return (
-                          <div key={subcat.id} className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              {hasLevel3 ? (
-                                <button
-                                  onClick={() => toggleCategory(subcat.id)}
-                                  className="p-0 h-4 w-4 flex items-center justify-center"
-                                >
-                                  {openCategories.includes(subcat.id) ? (
-                                    <ChevronDown className="h-3 w-3" />
-                                  ) : (
-                                    <ChevronRight className="h-3 w-3" />
-                                  )}
-                                </button>
-                              ) : (
-                                <div className="w-4" />
-                              )}
-                              <Checkbox
-                                id={subcat.slug}
-                                checked={selectedCategories.includes(subcat.slug)}
-                                onCheckedChange={(checked) => handleCategoryChange(subcat.slug, checked as boolean)}
-                              />
-                              <Label
-                                htmlFor={subcat.slug}
-                                className="text-sm font-normal cursor-pointer"
-                              >
-                                {subcat.name}
-                              </Label>
-                            </div>
-
-                            {/* Level 3 Sub-subcategories */}
-                            {hasLevel3 && openCategories.includes(subcat.id) && (
-                              <div className="ml-6 space-y-1 mt-1">
-                                {level3Categories.map((subsubcat) => (
-                                  <div key={subsubcat.id} className="flex items-center space-x-2">
-                                    <div className="w-4" />
-                                    <Checkbox
-                                      id={subsubcat.slug}
-                                      checked={selectedCategories.includes(subsubcat.slug)}
-                                      onCheckedChange={(checked) => handleCategoryChange(subsubcat.slug, checked as boolean)}
-                                    />
-                                    <Label
-                                      htmlFor={subsubcat.slug}
-                                      className="text-sm font-normal cursor-pointer text-muted-foreground"
-                                    >
-                                      {subsubcat.name}
-                                    </Label>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Tags */}
-        <div>
-          <h3 className="font-semibold mb-3">Tags</h3>
-          <div className="space-y-2">
-            {tags.map((tag) => (
-              <div key={tag.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={tag.id}
-                  checked={selectedTags.includes(tag.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setSelectedTags([...selectedTags, tag.id]);
-                    } else {
-                      setSelectedTags(selectedTags.filter(t => t !== tag.id));
-                    }
-                  }}
-                />
-                <Label htmlFor={tag.id} className="text-sm font-normal cursor-pointer">
-                  {tag.name}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Stock Status */}
-        <div>
-          <h3 className="font-semibold mb-3">Availability</h3>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="in-stock" defaultChecked />
-              <Label htmlFor="in-stock" className="text-sm font-normal cursor-pointer">
-                In Stock
+      {/* Tags */}
+      <div className="mt-6">
+        <h3 className="font-semibold mb-3">Tags</h3>
+        <div className="space-y-2">
+          {tags.map((tag) => (
+            <div key={tag.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={tag.id}
+                checked={selectedTags.includes(tag.id)}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setSelectedTags([...selectedTags, tag.id]);
+                  } else {
+                    setSelectedTags(selectedTags.filter(t => t !== tag.id));
+                  }
+                  setCurrentPage(1);
+                }}
+              />
+              <Label htmlFor={tag.id} className="text-sm font-normal cursor-pointer">
+                {tag.name}
               </Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="out-of-stock" />
-              <Label htmlFor="out-of-stock" className="text-sm font-normal cursor-pointer">
-                Out of Stock
-              </Label>
-            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
+      {/* Stock Status */}
+      <div>
+        <h3 className="font-semibold mb-3">Availability</h3>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="in-stock" defaultChecked />
+            <Label htmlFor="in-stock" className="text-sm font-normal cursor-pointer">
+              In Stock
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="out-of-stock" />
+            <Label htmlFor="out-of-stock" className="text-sm font-normal cursor-pointer">
+              Out of Stock
+            </Label>
           </div>
         </div>
       </div>
@@ -293,9 +298,10 @@ const Shop = () => {
         variant="outline" 
         className="w-full mt-6" 
         onClick={() => {
-          setSelectedCategories([]);
+          setSelectedCategory(null);
           setSelectedTags([]);
           setSearchQuery("");
+          setCurrentPage(1);
         }}
       >
         Clear Filters
@@ -308,9 +314,6 @@ const Shop = () => {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
-        {/* Carousel */}
-        {/* <ShopCarousel /> */}
-
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">All Products</h1>
           <p className="text-sm md:text-base text-muted-foreground">Browse our complete range of wholesale food products</p>
@@ -324,9 +327,9 @@ const Shop = () => {
                 <Button variant="outline" className="w-full">
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filters
-                  {(selectedCategories.length > 0 || selectedTags.length > 0) && (
+                  {(selectedCategory || selectedTags.length > 0) && (
                     <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                      {selectedCategories.length + selectedTags.length}
+                      {(selectedCategory ? 1 : 0) + selectedTags.length}
                     </span>
                   )}
                 </Button>
@@ -352,7 +355,7 @@ const Shop = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search products..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -364,7 +367,7 @@ const Shop = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <p className="text-sm md:text-base text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Showing {currentProducts.length} of {sortedProducts.length} products
               </p>
               <div className="flex items-center gap-2">
@@ -392,9 +395,10 @@ const Shop = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="newest">Newest Arrivals</SelectItem>
                     <SelectItem value="name">Name (A-Z)</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="price-low">Price - Low to High</SelectItem>
+                    <SelectItem value="price-high">Price - High to Low</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -420,7 +424,7 @@ const Shop = () => {
                 <Button 
                   variant="link" 
                   onClick={() => {
-                    setSelectedCategories([]);
+                    setSelectedCategory(null);
                     setSelectedTags([]);
                     setSearchQuery("");
                   }} 
@@ -461,14 +465,21 @@ const Shop = () => {
                             </PaginationLink>
                           </PaginationItem>
                         );
-                      } else if (page === currentPage - 2 || page === currentPage + 2) {
-                        return <PaginationEllipsis key={page} />;
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
                       }
                       return null;
                     })}
 
                     <PaginationItem>
-                      <PaginationNext 
+                      <PaginationNext
                         onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                         className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
