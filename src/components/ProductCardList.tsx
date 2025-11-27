@@ -19,7 +19,12 @@ export const ProductCardList = ({ product }: ProductCardListProps) => {
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
 
-  const productImage = product.images[0] ? productImages[product.images[0]] || "/placeholder.svg" : "/placeholder.svg";
+  // Handle both direct URLs and product image keys
+  const productImage = product.images[0]
+    ? product.images[0].startsWith('/') || product.images[0].startsWith('http')
+      ? product.images[0]
+      : productImages[product.images[0]] || "/placeholder.svg"
+    : "/placeholder.svg";
 
   const handleAddToCart = () => {
     addItem(product, quantity);
