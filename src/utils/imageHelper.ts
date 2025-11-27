@@ -8,15 +8,15 @@ export const getImageUrl = (filename: string, type: 'product' | 'category' = 'pr
   return `${STORAGE_BASE_URL}/${folder}/${fullFilename}`;
 };
 
-// Product image URLs
+// Product image URLs (keys without extension to match mockData)
 export const productImages: Record<string, string> = {
-  'product-passata.jpg': getImageUrl('product-passata.jpg'),
-  'product-pesto.jpg': getImageUrl('product-pesto.jpg'),
-  'product-pasta.jpg': getImageUrl('product-pasta.jpg'),
-  'product-orange-juice.jpg': getImageUrl('product-orange-juice.jpg'),
-  'product-water.jpg': getImageUrl('product-water.jpg'),
-  'product-cola.jpg': getImageUrl('product-cola.jpg'),
-  'product-chips.jpg': getImageUrl('product-chips.jpg'),
+  'product-passata': getImageUrl('product-passata'),
+  'product-pesto': getImageUrl('product-pesto'),
+  'product-pasta': getImageUrl('product-pasta'),
+  'product-orange-juice': getImageUrl('product-orange-juice'),
+  'product-water': getImageUrl('product-water'),
+  'product-cola': getImageUrl('product-cola'),
+  'product-chips': getImageUrl('product-chips'),
 };
 
 // Category image URLs
