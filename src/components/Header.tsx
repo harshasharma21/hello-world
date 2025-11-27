@@ -131,7 +131,7 @@ export const Header = () => {
                 <Link to="/liked">
                   <Heart className="h-4 w-4" />
                   {wishlistTotal > 0 && (
-                    <Badge className="absolute -top-1 -right-1 text-[10px]">
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[9px] font-medium">
                       {wishlistTotal}
                     </Badge>
                   )}
@@ -148,7 +148,7 @@ export const Header = () => {
                 <Link to="/cart">
                   <ShoppingCart className="h-5 w-5" />
                   {totalItems > 0 && (
-                    <Badge className="absolute -top-1 -right-1 text-[10px]">
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[9px] font-medium">
                       {totalItems}
                     </Badge>
                   )}
