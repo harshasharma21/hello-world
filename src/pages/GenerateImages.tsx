@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,20 @@ const GenerateImages = () => {
   const [currentProduct, setCurrentProduct] = useState("");
   const [generatedCount, setGeneratedCount] = useState(0);
   const [results, setResults] = useState<Array<{ name: string; success: boolean; error?: string }>>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+
+  useEffect(() => {
+    fetchProductsCount();
+  }, []);
+
+  const fetchProductsCount = async () => {
+    const { count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .or('images.is.null,images.eq.{},images.eq.{/placeholder.svg}');
+    
+    setTotalProducts(count || 0);
+  };
 
   const productsNeedingImages = mockProducts.filter(p => 
     !p.images[0] || p.images[0] === "/placeholder.svg"
@@ -26,61 +40,42 @@ const GenerateImages = () => {
     setGeneratedCount(0);
     setResults([]);
 
-    const total = productsNeedingImages.length;
+    try {
+      setCurrentProduct("Generating images...");
+      
+      const { data, error } = await supabase.functions.invoke('generate-missing-images', {
+        body: {}
+      });
 
-    for (let i = 0; i < productsNeedingImages.length; i++) {
-      const product = productsNeedingImages[i];
-      setCurrentProduct(product.name);
+      if (error) throw error;
 
-      try {
-        const { data, error } = await supabase.functions.invoke('generate-product-image', {
-          body: {
-            productName: product.name,
-            category: product.category,
-            description: product.shortDescription || product.description
-          }
-        });
-
-        if (error) throw error;
-
-        if (data?.error) {
-          throw new Error(data.error);
-        }
-
-        setResults(prev => [...prev, { 
-          name: product.name, 
-          success: true 
-        }]);
-        setGeneratedCount(prev => prev + 1);
-        
-        toast.success(`Generated image for ${product.name}`);
-        
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-      } catch (error: any) {
-        console.error(`Failed to generate image for ${product.name}:`, error);
-        setResults(prev => [...prev, { 
-          name: product.name, 
-          success: false, 
-          error: error.message 
-        }]);
-        
-        toast.error(`Failed: ${product.name} - ${error.message}`);
-        
-        // If rate limited, wait longer
-        if (error.message?.includes('Rate limit') || error.message?.includes('429')) {
-          toast.info("Rate limited - waiting 10 seconds...");
-          await new Promise(resolve => setTimeout(resolve, 10000));
-        }
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      setProgress(((i + 1) / total) * 100);
+      // Update results
+      if (data?.results) {
+        setResults(data.results.map((r: any) => ({
+          name: r.productName,
+          success: r.success,
+          error: r.error
+        })));
+        setGeneratedCount(data.successCount || 0);
+      }
+
+      setProgress(100);
+      toast.success(`Completed! Generated ${data.successCount} images`);
+      
+      // Refresh count
+      await fetchProductsCount();
+      
+    } catch (error: any) {
+      console.error('Failed to generate images:', error);
+      toast.error(`Failed: ${error.message}`);
     }
 
     setIsGenerating(false);
     setCurrentProduct("");
-    toast.success(`Completed! Generated ${generatedCount} images`);
   };
 
   return (
@@ -97,13 +92,26 @@ const GenerateImages = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Button 
+                  onClick={fetchProductsCount}
+                  variant="outline"
+                  className="w-full mb-4"
+                >
+                  Check Products Needing Images
+                </Button>
+                
                 <p className="text-muted-foreground mb-4">
-                  {productsNeedingImages.length} products need images
+                  {totalProducts > 0 
+                    ? `${totalProducts} products need images` 
+                    : productsNeedingImages.length > 0 
+                      ? `${productsNeedingImages.length} products need images (from mock data)`
+                      : 'Click "Check Products" to see how many products need images'
+                  }
                 </p>
                 
                 <Button 
                   onClick={generateAllImages}
-                  disabled={isGenerating || productsNeedingImages.length === 0}
+                  disabled={isGenerating || (totalProducts === 0 && productsNeedingImages.length === 0)}
                   className="w-full"
                 >
                   {isGenerating ? (
@@ -112,7 +120,7 @@ const GenerateImages = () => {
                       Generating Images...
                     </>
                   ) : (
-                    `Generate ${productsNeedingImages.length} Images`
+                    `Generate Images (Batch of 10)`
                   )}
                 </Button>
               </div>
@@ -120,13 +128,13 @@ const GenerateImages = () => {
               {isGenerating && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Progress: {generatedCount} / {productsNeedingImages.length}</span>
+                    <span>Processing...</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} />
                   {currentProduct && (
                     <p className="text-sm text-muted-foreground">
-                      Currently generating: {currentProduct}
+                      {currentProduct}
                     </p>
                   )}
                 </div>
@@ -160,12 +168,13 @@ const GenerateImages = () => {
           )}
 
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h3 className="font-semibold mb-2">Important Notes:</h3>
+            <h3 className="font-semibold mb-2">How it works:</h3>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-              <li>Images are generated using AI and uploaded to Supabase storage</li>
-              <li>The process includes delays to avoid rate limiting</li>
-              <li>Generated images will need to be referenced in mockData.ts manually</li>
-              <li>Check the product-images bucket in Supabase for uploaded files</li>
+              <li>Generates AI images using Nano banana model for products without images</li>
+              <li>Automatically uploads images to Supabase storage bucket</li>
+              <li>Updates product records with the new image URLs</li>
+              <li>Processes 10 products at a time to avoid timeouts</li>
+              <li>Run multiple times until all products have images</li>
             </ul>
           </div>
         </div>
