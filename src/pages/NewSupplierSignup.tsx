@@ -1,205 +1,346 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Upload } from "lucide-react";
 
 const NewSupplierSignup = () => {
   const [formData, setFormData] = useState({
-    companyName: "",
-    contactName: "",
+    brandName: "",
+    yourName: "",
     email: "",
+    password: "",
     phone: "",
-    productCategory: "",
-    description: "",
-    address: "",
-    city: "",
-    postcode: "",
+    businessAddress: "",
     website: "",
-    certifications: "",
-    terms: false,
+    commercialsFile: null as File | null,
+    brandDeckFile: null as File | null,
+    salesDataFile: null as File | null,
+    stockistsInLondon: "",
+    samplesSent: "",
+    teamInfo: "",
+    routesToMarket: "",
+    marketingPlans: "",
+    fieldSalesTeam: "",
+    tradeMarketingInvestment: "",
   });
+
+  const commercialsRef = useRef<HTMLInputElement>(null);
+  const brandDeckRef = useRef<HTMLInputElement>(null);
+  const salesDataRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.terms) {
-      toast.error("Please accept the terms and conditions");
-      return;
-    }
     toast.success("Application submitted! We'll review and contact you shortly.");
     console.log("Supplier form submitted:", formData);
   };
 
+  const FileUploadField = ({ 
+    label, 
+    description, 
+    required, 
+    inputRef, 
+    file, 
+    accept,
+    onFileChange 
+  }: { 
+    label: string; 
+    description: string; 
+    required?: boolean; 
+    inputRef: React.RefObject<HTMLInputElement>;
+    file: File | null;
+    accept?: string;
+    onFileChange: (file: File | null) => void;
+  }) => (
+    <div className="space-y-1">
+      <Label>
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
+      <p className="text-xs text-muted-foreground">{description}</p>
+      <div 
+        className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+        onClick={() => inputRef.current?.click()}
+      >
+        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          {file ? file.name : "Choose a file to upload or drag and drop here"}
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          accept={accept}
+          onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">New Supplier Signup</h1>
-            <p className="text-muted-foreground">
-              Partner with CN Foods and supply quality products to our wholesale network
-            </p>
-          </div>
+        <div className="max-w-2xl mx-auto">
+          <Card className="shadow-sm">
+            <CardContent className="p-8">
+              <div className="text-center mb-6">
+                <div className="text-2xl font-bold text-primary mb-2">CN Foods</div>
+                <h1 className="text-2xl font-semibold">New Brand Submissions</h1>
+              </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Supplier Information</CardTitle>
-              <CardDescription>
-                Tell us about your company and the products you supply
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">Company Name *</Label>
-                    <Input
-                      id="companyName"
-                      required
-                      value={formData.companyName}
-                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contactName">Contact Name *</Label>
-                    <Input
-                      id="contactName"
-                      required
-                      value={formData.contactName}
-                      onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label htmlFor="brandName">
+                    Brand Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="brandName"
+                    required
+                    maxLength={255}
+                    value={formData.brandName}
+                    onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{formData.brandName.length}/255</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label htmlFor="yourName">
+                    Your Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="yourName"
+                    required
+                    value={formData.yourName}
+                    onChange={(e) => setFormData({ ...formData, yourName: e.target.value })}
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="email">
+                    Email Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="password">
+                    Password <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Create a password for your account</p>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={8}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="phone">
+                    Phone <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-2 px-3 border rounded-md bg-muted/50 text-sm">
+                      <span>🇬🇧</span>
+                      <span>(+44)</span>
+                    </div>
                     <Input
                       id="phone"
                       type="tel"
                       required
+                      className="flex-1"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="productCategory">Product Category *</Label>
-                  <Select value={formData.productCategory} onValueChange={(value) => setFormData({ ...formData, productCategory: value })}>
-                    <SelectTrigger id="productCategory">
-                      <SelectValue placeholder="Select product category" />
+                <div className="space-y-1">
+                  <Label htmlFor="businessAddress">
+                    Business Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.businessAddress} onValueChange={(value) => setFormData({ ...formData, businessAddress: value })}>
+                    <SelectTrigger id="businessAddress">
+                      <SelectValue placeholder="Select address" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="food-cupboard">Food Cupboard</SelectItem>
-                      <SelectItem value="beverages">Beverages</SelectItem>
-                      <SelectItem value="frozen">Frozen Foods</SelectItem>
-                      <SelectItem value="snacks">Snacks</SelectItem>
-                      <SelectItem value="fresh">Fresh Produce</SelectItem>
+                      <SelectItem value="london">London</SelectItem>
+                      <SelectItem value="manchester">Manchester</SelectItem>
+                      <SelectItem value="birmingham">Birmingham</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Product Description *</Label>
-                  <Textarea
-                    id="description"
-                    required
-                    rows={4}
-                    placeholder="Describe the products you supply, key features, and what makes them unique"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Company Address *</Label>
-                  <Textarea
-                    id="address"
-                    required
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      required
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="postcode">Postcode *</Label>
-                    <Input
-                      id="postcode"
-                      required
-                      value={formData.postcode}
-                      onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website (Optional)</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="website">
+                    Website <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="website"
                     type="url"
+                    required
                     placeholder="https://www.yourcompany.com"
                     value={formData.website}
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="certifications">Certifications (Optional)</Label>
-                  <Textarea
-                    id="certifications"
-                    rows={3}
-                    placeholder="List any relevant certifications (e.g., Organic, Halal, ISO, etc.)"
-                    value={formData.certifications}
-                    onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
-                  />
+                <FileUploadField
+                  label="Commercials (Excel Please)"
+                  description="Products, Prices, MOQ, Min Shelf Life, Lead Time"
+                  required
+                  inputRef={commercialsRef}
+                  file={formData.commercialsFile}
+                  accept=".xlsx,.xls,.csv"
+                  onFileChange={(file) => setFormData({ ...formData, commercialsFile: file })}
+                />
+
+                <FileUploadField
+                  label="Brand Deck"
+                  description="PDF explaining your brand"
+                  required
+                  inputRef={brandDeckRef}
+                  file={formData.brandDeckFile}
+                  accept=".pdf"
+                  onFileChange={(file) => setFormData({ ...formData, brandDeckFile: file })}
+                />
+
+                <div className="space-y-1">
+                  <Label htmlFor="stockistsInLondon">
+                    Do you have stockists in London? <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.stockistsInLondon} onValueChange={(value) => setFormData({ ...formData, stockistsInLondon: value })}>
+                    <SelectTrigger id="stockistsInLondon">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms}
-                    onCheckedChange={(checked) => setFormData({ ...formData, terms: checked as boolean })}
-                  />
-                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
-                    I agree to the supplier terms and conditions and privacy policy *
+                <FileUploadField
+                  label="Sales Data"
+                  description="We want to see the when, what, where, quantity, repeat orders. London indie data & direct stockist data is best"
+                  required
+                  inputRef={salesDataRef}
+                  file={formData.salesDataFile}
+                  accept=".xlsx,.xls,.csv,.pdf"
+                  onFileChange={(file) => setFormData({ ...formData, salesDataFile: file })}
+                />
+
+                <div className="space-y-1">
+                  <Label htmlFor="samplesSent">
+                    Have you sent us samples? <span className="text-destructive">*</span>
                   </Label>
+                  <p className="text-xs text-muted-foreground">FAO Buying Team, CN Foods, 63 Garman Rd, London, N17 0UN, UK</p>
+                  <Select value={formData.samplesSent} onValueChange={(value) => setFormData({ ...formData, samplesSent: value })}>
+                    <SelectTrigger id="samplesSent">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="will-send">Will send</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="teamInfo">Brief info on the Team</Label>
+                  <Textarea
+                    id="teamInfo"
+                    maxLength={2000}
+                    rows={4}
+                    value={formData.teamInfo}
+                    onChange={(e) => setFormData({ ...formData, teamInfo: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{formData.teamInfo.length} out of 2000</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="routesToMarket">
+                    Current Routes To Market <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">How do you currently serve your customers and what kind of businesses are they?</p>
+                  <Textarea
+                    id="routesToMarket"
+                    required
+                    maxLength={2000}
+                    rows={4}
+                    value={formData.routesToMarket}
+                    onChange={(e) => setFormData({ ...formData, routesToMarket: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{formData.routesToMarket.length} out of 2000</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="marketingPlans">
+                    What do you have planned for above the line marketing? <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    id="marketingPlans"
+                    required
+                    maxLength={2000}
+                    rows={4}
+                    value={formData.marketingPlans}
+                    onChange={(e) => setFormData({ ...formData, marketingPlans: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{formData.marketingPlans.length} out of 2000</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="fieldSalesTeam">
+                    Do you currently have a field sales team? <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.fieldSalesTeam} onValueChange={(value) => setFormData({ ...formData, fieldSalesTeam: value })}>
+                    <SelectTrigger id="fieldSalesTeam">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="planning">Planning to build one</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="tradeMarketingInvestment">
+                    Proposed Trade Marketing & Sales Team Investment <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.tradeMarketingInvestment} onValueChange={(value) => setFormData({ ...formData, tradeMarketingInvestment: value })}>
+                    <SelectTrigger id="tradeMarketingInvestment">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="under-10k">Under £10,000</SelectItem>
+                      <SelectItem value="10k-50k">£10,000 - £50,000</SelectItem>
+                      <SelectItem value="50k-100k">£50,000 - £100,000</SelectItem>
+                      <SelectItem value="over-100k">Over £100,000</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button type="submit" size="lg" className="w-full">
-                  Submit Supplier Application
+                  Submit
                 </Button>
               </form>
             </CardContent>
