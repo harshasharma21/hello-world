@@ -160,30 +160,108 @@ export type Database = {
       profiles: {
         Row: {
           account_type: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          brand_name: string | null
+          business_address: string | null
+          business_type: string | null
+          city: string | null
           company_name: string | null
+          contact_name: string | null
+          country: string | null
+          county: string | null
           created_at: string | null
+          field_sales_team: string | null
           full_name: string | null
+          hear_about_us: string | null
           id: string
+          job_title: string | null
+          marketing_plans: string | null
+          mobile: string | null
+          ordering_method: string | null
+          payment_method: string | null
+          phone: string | null
+          postcode: string | null
           role: string | null
+          routes_to_market: string | null
+          samples_sent: string | null
+          stockists_in_london: string | null
+          team_info: string | null
+          trade_marketing_investment: string | null
+          trading_name: string | null
           updated_at: string | null
+          vat_number: string | null
+          website: string | null
         }
         Insert: {
           account_type?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          brand_name?: string | null
+          business_address?: string | null
+          business_type?: string | null
+          city?: string | null
           company_name?: string | null
+          contact_name?: string | null
+          country?: string | null
+          county?: string | null
           created_at?: string | null
+          field_sales_team?: string | null
           full_name?: string | null
+          hear_about_us?: string | null
           id: string
+          job_title?: string | null
+          marketing_plans?: string | null
+          mobile?: string | null
+          ordering_method?: string | null
+          payment_method?: string | null
+          phone?: string | null
+          postcode?: string | null
           role?: string | null
+          routes_to_market?: string | null
+          samples_sent?: string | null
+          stockists_in_london?: string | null
+          team_info?: string | null
+          trade_marketing_investment?: string | null
+          trading_name?: string | null
           updated_at?: string | null
+          vat_number?: string | null
+          website?: string | null
         }
         Update: {
           account_type?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          brand_name?: string | null
+          business_address?: string | null
+          business_type?: string | null
+          city?: string | null
           company_name?: string | null
+          contact_name?: string | null
+          country?: string | null
+          county?: string | null
           created_at?: string | null
+          field_sales_team?: string | null
           full_name?: string | null
+          hear_about_us?: string | null
           id?: string
+          job_title?: string | null
+          marketing_plans?: string | null
+          mobile?: string | null
+          ordering_method?: string | null
+          payment_method?: string | null
+          phone?: string | null
+          postcode?: string | null
           role?: string | null
+          routes_to_market?: string | null
+          samples_sent?: string | null
+          stockists_in_london?: string | null
+          team_info?: string | null
+          trade_marketing_investment?: string | null
+          trading_name?: string | null
           updated_at?: string | null
+          vat_number?: string | null
+          website?: string | null
         }
         Relationships: []
       }
