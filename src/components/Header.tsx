@@ -8,6 +8,7 @@ import {
   Mail,
   LogOut,
 } from "lucide-react";
+import natureliaLogo from "@/assets/naturelia-logo.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -114,9 +115,11 @@ export const Header = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <div className="text-xl md:text-2xl font-bold text-primary">
-                CN Foods
-              </div>
+              <img 
+                src={natureliaLogo} 
+                alt="Naturelia Wholefood" 
+                className="h-10 md:h-12 w-auto object-contain"
+              />
             </Link>
 
             {/* Icons */}
