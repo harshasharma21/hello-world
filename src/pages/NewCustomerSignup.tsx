@@ -7,8 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const NewCustomerSignup = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     contactName: "",
     jobTitle: "",
@@ -29,10 +33,62 @@ const NewCustomerSignup = () => {
     hearAboutUs: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Application submitted! We'll contact you shortly.");
-    console.log("Form submitted:", formData);
+    setIsLoading(true);
+
+    try {
+      // Create auth user with metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.contactName,
+            company_name: formData.tradingName,
+            role: 'customer',
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (authError) throw authError;
+
+      // Update profile with additional customer fields
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            contact_name: formData.contactName,
+            job_title: formData.jobTitle,
+            trading_name: formData.tradingName,
+            business_type: formData.businessType,
+            vat_number: formData.vatNumber || null,
+            mobile: formData.mobile,
+            address_line_1: formData.addressLine1,
+            address_line_2: formData.addressLine2 || null,
+            city: formData.city || null,
+            county: formData.county || null,
+            postcode: formData.postcode,
+            country: formData.country || null,
+            ordering_method: formData.orderingMethod,
+            payment_method: formData.paymentMethod,
+            hear_about_us: formData.hearAboutUs || null,
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+        }
+      }
+
+      toast.success("Account created! Please check your email to verify your account.");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create account");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -295,8 +351,8 @@ const NewCustomerSignup = () => {
                   </Select>
                 </div>
 
-                <Button type="submit" size="lg" className="w-full">
-                  Sign Me Up!
+                <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Sign Me Up!"}
                 </Button>
               </form>
             </CardContent>
