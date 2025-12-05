@@ -24,11 +24,11 @@ const Index = () => {
           >
             <CarouselContent>
               {[
-                { img: categoryImages["category-food-cupboard"], category: categories.find(c => c.slug === "food-cupboard")! },
-                { img: categoryImages["category-beverages"], category: categories.find(c => c.slug === "beverages")! },
-                { img: categoryImages["category-frozen-foods"], category: categories.find(c => c.slug === "frozen-foods")! },
-                { img: categoryImages["category-snacks"], category: categories.find(c => c.slug === "snacks")! }
-              ].map((item, index) => (
+                { img: categoryImages["category-food-cupboard"], category: categories.find(c => c.slug === "food-cupboard") },
+                { img: categoryImages["category-beverages"], category: categories.find(c => c.slug === "drinks") },
+                { img: categoryImages["category-frozen-foods"], category: categories.find(c => c.slug === "fresh-chilled") },
+                { img: categoryImages["category-snacks"], category: categories.find(c => c.slug === "snacking") }
+              ].filter(item => item.category).map((item, index) => (
                 <CarouselItem key={index}>
                   <div className="relative h-[400px] md:h-[500px] lg:h-[600px]">
                     <img 
