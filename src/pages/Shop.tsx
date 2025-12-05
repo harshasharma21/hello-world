@@ -215,13 +215,19 @@ const Shop = () => {
                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                       isSelected ? 'border-primary' : 'border-muted-foreground/40'
                     }`}
-                    onClick={() => handleCategorySelect(category.slug)}
+                    onClick={() => {
+                      handleCategorySelect(category.slug);
+                      if (hasSubcategories && !isOpen) toggleCategory(category.id);
+                    }}
                   >
                     {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                   </div>
                   <span 
                     className="text-sm ml-2 flex-1"
-                    onClick={() => handleCategorySelect(category.slug)}
+                    onClick={() => {
+                      handleCategorySelect(category.slug);
+                      if (hasSubcategories && !isOpen) toggleCategory(category.id);
+                    }}
                   >
                     {category.name}
                   </span>
@@ -258,13 +264,19 @@ const Shop = () => {
                               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                 isSubSelected ? 'border-primary' : 'border-muted-foreground/40'
                               }`}
-                              onClick={() => handleCategorySelect(subcat.slug)}
+                              onClick={() => {
+                                handleCategorySelect(subcat.slug);
+                                if (hasLevel3 && !isSubOpen) toggleCategory(subcat.id);
+                              }}
                             >
                               {isSubSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                             </div>
                             <span 
                               className="text-sm ml-2 flex-1"
-                              onClick={() => handleCategorySelect(subcat.slug)}
+                              onClick={() => {
+                                handleCategorySelect(subcat.slug);
+                                if (hasLevel3 && !isSubOpen) toggleCategory(subcat.id);
+                              }}
                             >
                               {subcat.name}
                             </span>
@@ -301,13 +313,19 @@ const Shop = () => {
                                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                           isSubSubSelected ? 'border-primary' : 'border-muted-foreground/40'
                                         }`}
-                                        onClick={() => handleCategorySelect(subsubcat.slug)}
+                                        onClick={() => {
+                                          handleCategorySelect(subsubcat.slug);
+                                          if (hasLevel4 && !isSubSubOpen) toggleCategory(subsubcat.id);
+                                        }}
                                       >
                                         {isSubSubSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                                       </div>
                                       <span 
                                         className="text-sm ml-2 flex-1"
-                                        onClick={() => handleCategorySelect(subsubcat.slug)}
+                                        onClick={() => {
+                                          handleCategorySelect(subsubcat.slug);
+                                          if (hasLevel4 && !isSubSubOpen) toggleCategory(subsubcat.id);
+                                        }}
                                       >
                                         {subsubcat.name}
                                       </span>
