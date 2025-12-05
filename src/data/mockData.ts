@@ -4,10 +4,11 @@ export const tags = [
   { id: "special-offer", name: "Special Offer" },
   { id: "organic", name: "Organic" },
   { id: "new", name: "New" },
+  { id: "ambient", name: "Ambient" },
+  { id: "chilled", name: "Chilled" },
+  { id: "b-corp", name: "B Corp" },
   { id: "vegan", name: "Vegan" },
   { id: "vegetarian", name: "Vegetarian" },
-  { id: "gluten-free", name: "Gluten Free" },
-  { id: "5-days-msl", name: "5 Days MSL" },
 ];
 
 export const categories: Category[] = [

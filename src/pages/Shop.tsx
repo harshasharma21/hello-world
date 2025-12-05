@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { mockProducts, categories, tags } from "@/data/mockData";
-import { SlidersHorizontal, ChevronDown, ChevronRight, Grid3x3, List, Search } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, ChevronUp, Grid3x3, List, Search } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -165,102 +165,191 @@ const Shop = () => {
   const FilterContent = () => (
     <>
       <div className="mb-6">
-        <h2 className="font-semibold text-lg mb-4">Categories</h2>
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {/* All Products option */}
           <div 
-            className={`flex items-center space-x-2 py-1.5 px-2 rounded cursor-pointer transition-colors ${
-              selectedCategory === null ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-            }`}
+            className="flex items-center py-1.5 cursor-pointer"
             onClick={() => {
               setSelectedCategory(null);
               setCurrentPage(1);
             }}
           >
-            <div className={`w-2 h-2 rounded-full ${selectedCategory === null ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-            <span className="text-sm font-medium">All Products</span>
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+              selectedCategory === null ? 'border-primary' : 'border-muted-foreground/40'
+            }`}>
+              {selectedCategory === null && <div className="w-2 h-2 rounded-full bg-primary" />}
+            </div>
+            <span className="text-sm ml-2">All Products</span>
           </div>
+
+          {/* Special categories */}
+          {["Special Offers", "Featured Products", "New Products"].map((name) => {
+            const slug = name.toLowerCase().replace(/ /g, "-");
+            const isSelected = selectedCategory === slug;
+            return (
+              <div 
+                key={slug}
+                className="flex items-center py-1.5 cursor-pointer"
+                onClick={() => handleCategorySelect(slug)}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  isSelected ? 'border-primary' : 'border-muted-foreground/40'
+                }`}>
+                  {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
+                <span className="text-sm ml-2">{name}</span>
+              </div>
+            );
+          })}
 
           {categories.filter(cat => !cat.parentId).map((category) => {
             const level2Categories = getSubcategories(category.id);
             const hasSubcategories = level2Categories.length > 0;
             const isSelected = selectedCategory === category.slug;
-            const descendantSlugs = getAllDescendantSlugs(category.id);
-            const isChildSelected = selectedCategory && descendantSlugs.includes(selectedCategory);
+            const isOpen = openCategories.includes(category.id);
             
             return (
-              <div key={category.id} className="space-y-0.5">
-                <div 
-                  className={`flex items-center py-1.5 px-2 rounded cursor-pointer transition-colors ${
-                    isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                  }`}
-                  onClick={() => {
-                    handleCategorySelect(category.slug);
-                    if (hasSubcategories) toggleCategory(category.id);
-                  }}
-                >
-                  <div className={`w-2 h-2 rounded-full ${isSelected || isChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                  <span className="text-sm ml-2 flex-1">{category.name}</span>
+              <div key={category.id}>
+                <div className="flex items-center py-1.5 cursor-pointer">
+                  <div 
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      isSelected ? 'border-primary' : 'border-muted-foreground/40'
+                    }`}
+                    onClick={() => handleCategorySelect(category.slug)}
+                  >
+                    {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                  </div>
+                  <span 
+                    className="text-sm ml-2 flex-1"
+                    onClick={() => handleCategorySelect(category.slug)}
+                  >
+                    {category.name}
+                  </span>
                   {hasSubcategories && (
-                    <div className="ml-auto">
-                      {openCategories.includes(category.id) ? (
-                        <ChevronDown className="h-3 w-3" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCategory(category.id);
+                      }}
+                      className="p-1 hover:bg-muted rounded"
+                    >
+                      {isOpen ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="h-3 w-3" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
-                    </div>
+                    </button>
                   )}
                 </div>
 
                 {/* Level 2 Subcategories */}
-                {hasSubcategories && openCategories.includes(category.id) && (
-                  <div className="ml-5 space-y-0.5">
+                {hasSubcategories && isOpen && (
+                  <div className="ml-6 space-y-0.5">
                     {level2Categories.map((subcat) => {
                       const level3Categories = getSubcategories(subcat.id);
                       const hasLevel3 = level3Categories.length > 0;
                       const isSubSelected = selectedCategory === subcat.slug;
-                      const subDescendantSlugs = getAllDescendantSlugs(subcat.id);
-                      const isSubChildSelected = selectedCategory && subDescendantSlugs.includes(selectedCategory);
+                      const isSubOpen = openCategories.includes(subcat.id);
                       
                       return (
-                        <div key={subcat.id} className="space-y-0.5">
-                          <div 
-                            className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
-                              isSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                            }`}
-                            onClick={() => {
-                              handleCategorySelect(subcat.slug);
-                              if (hasLevel3) toggleCategory(subcat.id);
-                            }}
-                          >
-                            <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                            <span className="text-sm text-muted-foreground ml-2 flex-1">{subcat.name}</span>
+                        <div key={subcat.id}>
+                          <div className="flex items-center py-1 cursor-pointer">
+                            <div 
+                              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                isSubSelected ? 'border-primary' : 'border-muted-foreground/40'
+                              }`}
+                              onClick={() => handleCategorySelect(subcat.slug)}
+                            >
+                              {isSubSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                            </div>
+                            <span 
+                              className="text-sm ml-2 flex-1"
+                              onClick={() => handleCategorySelect(subcat.slug)}
+                            >
+                              {subcat.name}
+                            </span>
                             {hasLevel3 && (
-                              <div className="ml-auto">
-                                {openCategories.includes(subcat.id) ? (
-                                  <ChevronDown className="h-3 w-3" />
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleCategory(subcat.id);
+                                }}
+                                className="p-1 hover:bg-muted rounded"
+                              >
+                                {isSubOpen ? (
+                                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
                                 ) : (
-                                  <ChevronRight className="h-3 w-3" />
+                                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                 )}
-                              </div>
+                              </button>
                             )}
                           </div>
 
                           {/* Level 3 Sub-subcategories */}
-                          {hasLevel3 && openCategories.includes(subcat.id) && (
-                            <div className="ml-5 space-y-0.5">
+                          {hasLevel3 && isSubOpen && (
+                            <div className="ml-6 space-y-0.5">
                               {level3Categories.map((subsubcat) => {
+                                const level4Categories = getSubcategories(subsubcat.id);
+                                const hasLevel4 = level4Categories.length > 0;
                                 const isSubSubSelected = selectedCategory === subsubcat.slug;
+                                const isSubSubOpen = openCategories.includes(subsubcat.id);
+                                
                                 return (
-                                  <div 
-                                    key={subsubcat.id} 
-                                    className={`flex items-center space-x-2 py-1 px-2 ml-5 rounded cursor-pointer transition-colors ${
-                                      isSubSubSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                                    }`}
-                                    onClick={() => handleCategorySelect(subsubcat.slug)}
-                                  >
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isSubSubSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                                    <span className="text-sm text-muted-foreground">{subsubcat.name}</span>
+                                  <div key={subsubcat.id}>
+                                    <div className="flex items-center py-1 cursor-pointer">
+                                      <div 
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                          isSubSubSelected ? 'border-primary' : 'border-muted-foreground/40'
+                                        }`}
+                                        onClick={() => handleCategorySelect(subsubcat.slug)}
+                                      >
+                                        {isSubSubSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                      </div>
+                                      <span 
+                                        className="text-sm ml-2 flex-1"
+                                        onClick={() => handleCategorySelect(subsubcat.slug)}
+                                      >
+                                        {subsubcat.name}
+                                      </span>
+                                      {hasLevel4 && (
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleCategory(subsubcat.id);
+                                          }}
+                                          className="p-1 hover:bg-muted rounded"
+                                        >
+                                          {isSubSubOpen ? (
+                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                          ) : (
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Level 4 */}
+                                    {hasLevel4 && isSubSubOpen && (
+                                      <div className="ml-6 space-y-0.5">
+                                        {level4Categories.map((l4cat) => {
+                                          const isL4Selected = selectedCategory === l4cat.slug;
+                                          return (
+                                            <div 
+                                              key={l4cat.id}
+                                              className="flex items-center py-1 cursor-pointer"
+                                              onClick={() => handleCategorySelect(l4cat.slug)}
+                                            >
+                                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                                isL4Selected ? 'border-primary' : 'border-muted-foreground/40'
+                                              }`}>
+                                                {isL4Selected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                              </div>
+                                              <span className="text-sm ml-2">{l4cat.name}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -302,27 +391,6 @@ const Shop = () => {
               </Label>
             </div>
           ))}
-        </div>
-      </div>
-
-      <Separator className="my-6" />
-
-      {/* Stock Status */}
-      <div>
-        <h3 className="font-semibold mb-3">Availability</h3>
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox id="in-stock" defaultChecked />
-            <Label htmlFor="in-stock" className="text-sm font-normal cursor-pointer">
-              In Stock
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="out-of-stock" />
-            <Label htmlFor="out-of-stock" className="text-sm font-normal cursor-pointer">
-              Out of Stock
-            </Label>
-          </div>
         </div>
       </div>
 
