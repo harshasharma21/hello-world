@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
+import natureliaLogo from "@/assets/naturelia-logo.jpg";
 
 const NewSupplierSignup = () => {
   const [formData, setFormData] = useState({
@@ -91,7 +92,7 @@ const NewSupplierSignup = () => {
           <Card className="shadow-sm">
             <CardContent className="p-8">
               <div className="text-center mb-6">
-                <div className="text-2xl font-bold text-primary mb-2">CN Foods</div>
+                <img src={natureliaLogo} alt="Naturelia" className="h-16 mx-auto mb-2" />
                 <h1 className="text-2xl font-semibold">New Brand Submissions</h1>
               </div>
 
@@ -250,7 +251,7 @@ const NewSupplierSignup = () => {
                   <Label htmlFor="samplesSent">
                     Have you sent us samples? <span className="text-destructive">*</span>
                   </Label>
-                  <p className="text-xs text-muted-foreground">FAO Buying Team, CN Foods, 63 Garman Rd, London, N17 0UN, UK</p>
+                  <p className="text-xs text-muted-foreground">FAO Buying Team, Naturelia, London, UK</p>
                   <Select value={formData.samplesSent} onValueChange={(value) => setFormData({ ...formData, samplesSent: value })}>
                     <SelectTrigger id="samplesSent">
                       <SelectValue placeholder="Select an option" />
