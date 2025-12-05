@@ -32,6 +32,7 @@ type SignInForm = z.infer<typeof signInSchema>;
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -49,6 +50,9 @@ const Auth = () => {
   const onSignUp = async (data: SignUpForm) => {
     setIsLoading(true);
     try {
+      // Sign out first to prevent auto-signin
+      await supabase.auth.signOut();
+      
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -58,17 +62,23 @@ const Auth = () => {
             company_name: data.companyName,
             role: data.role,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
 
       if (error) throw error;
 
+      // Sign out immediately after signup to prevent auto-login
+      await supabase.auth.signOut();
+
       toast({
         title: "Account created!",
-        description: "You have successfully signed up.",
+        description: "Please sign in with your new account.",
       });
-      navigate("/");
+      
+      // Switch to signin tab
+      setActiveTab("signin");
+      signUpForm.reset();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -110,7 +120,7 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-16 flex items-center justify-center">
-        <Tabs defaultValue="signin" className="w-full max-w-md">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md">
           {/* <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
