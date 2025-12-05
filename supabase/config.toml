@@ -1,16 +1,1 @@
-project_id = "xiztfbqekscdtztaoqdo"
-
-[functions.scrape-products]
-verify_jwt = false
-
-[functions.import-data]
-verify_jwt = false
-
-[functions.upload-images]
-verify_jwt = false
-
-[functions.generate-product-image]
-verify_jwt = false
-
-[functions.generate-missing-images]
-verify_jwt = false
+project_id = "uetbmdrakxzftmmedtwa"
