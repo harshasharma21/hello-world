@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface SalesRep {
+  id: string;
+  name: string;
+}
 
 const CustomerServices: React.FC = () => {
   const [shopName, setShopName] = useState("");
@@ -17,20 +28,64 @@ const CustomerServices: React.FC = () => {
   const [creditReason, setCreditReason] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [skus, setSkus] = useState("");
-  const [salesRep, setSalesRep] = useState("");
+  const [salesRepId, setSalesRepId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+
+  useEffect(() => {
+    loadDropdownData();
+  }, []);
+
+  const loadDropdownData = async () => {
+    const [deptResult, repResult] = await Promise.all([
+      supabase.from('departments').select('id, name').eq('is_active', true).order('sort_order'),
+      supabase.from('sales_representatives').select('id, name').eq('is_active', true).order('sort_order')
+    ]);
+
+    if (deptResult.data) setDepartments(deptResult.data);
+    if (repResult.data) setSalesReps(repResult.data);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast.success("Your request has been submitted. We'll get back to you soon!");
-    // Reset form
-    setShopName("");
-    setAccountCode("");
-    setEmail("");
-    setInvoiceDate("");
-    setCreditReason("");
-    setAdditionalInfo("");
-    setSkus("");
-    setSalesRep("");
+    setIsSubmitting(true);
+
+    try {
+      const selectedRep = salesReps.find(r => r.id === salesRepId);
+
+      const { error } = await supabase.from('customer_service_requests').insert({
+        shop_name: shopName,
+        account_code: accountCode,
+        email: email || null,
+        invoice_date: invoiceDate || null,
+        credit_reason: creditReason,
+        additional_info: additionalInfo || null,
+        skus,
+        sales_rep_id: salesRepId || null,
+        sales_rep_name: selectedRep?.name || null,
+      });
+
+      if (error) throw error;
+
+      toast.success("Your request has been submitted. We'll get back to you soon!");
+      // Reset form
+      setShopName("");
+      setAccountCode("");
+      setEmail("");
+      setInvoiceDate("");
+      setCreditReason("");
+      setAdditionalInfo("");
+      setSkus("");
+      setSalesRepId("");
+      setDepartmentId("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit request");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,6 +146,24 @@ const CustomerServices: React.FC = () => {
                       placeholder="your@email.com"
                       className="mt-1.5"
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="department" className="text-sm font-medium">
+                      Department
+                    </Label>
+                    <Select value={departmentId} onValueChange={setDepartmentId}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -161,7 +234,7 @@ const CustomerServices: React.FC = () => {
 
                   <div>
                     <Label htmlFor="picture" className="text-sm font-medium">
-                      Picture <span className="text-destructive">*</span>
+                      Picture
                     </Label>
                     <p className="text-xs text-muted-foreground mb-1.5">
                       If missing please take picture of line on invoice
@@ -188,21 +261,22 @@ const CustomerServices: React.FC = () => {
                     <Label htmlFor="salesRep" className="text-sm font-medium">
                       Your direct sales representative
                     </Label>
-                    <Select value={salesRep} onValueChange={setSalesRep}>
+                    <Select value={salesRepId} onValueChange={setSalesRepId}>
                       <SelectTrigger className="mt-1.5">
                         <SelectValue placeholder="Select your sales rep" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="rep1">Sales Rep 1</SelectItem>
-                        <SelectItem value="rep2">Sales Rep 2</SelectItem>
-                        <SelectItem value="rep3">Sales Rep 3</SelectItem>
-                        <SelectItem value="unknown">I don't know</SelectItem>
+                        {salesReps.map((rep) => (
+                          <SelectItem key={rep.id} value={rep.id}>
+                            {rep.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Submit
+                  <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </Button>
                 </form>
               </CardContent>

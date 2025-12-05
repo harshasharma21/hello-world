@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import natureliaLogo from "@/assets/naturelia-logo.jpg";
 
 const NewCustomerSignup = () => {
   const navigate = useNavigate();
@@ -54,31 +55,36 @@ const NewCustomerSignup = () => {
 
       if (authError) throw authError;
 
-      // Update profile with additional customer fields
+      // Update profile with basic fields (the trigger creates the profile)
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            contact_name: formData.contactName,
-            job_title: formData.jobTitle,
-            trading_name: formData.tradingName,
-            business_type: formData.businessType,
-            vat_number: formData.vatNumber || null,
-            mobile: formData.mobile,
-            address_line_1: formData.addressLine1,
-            address_line_2: formData.addressLine2 || null,
-            city: formData.city || null,
-            county: formData.county || null,
-            postcode: formData.postcode,
-            country: formData.country || null,
-            ordering_method: formData.orderingMethod,
-            payment_method: formData.paymentMethod,
-            hear_about_us: formData.hearAboutUs || null,
+            full_name: formData.contactName,
+            company_name: formData.tradingName,
+            phone: formData.mobile,
           })
-          .eq('id', authData.user.id);
+          .eq('user_id', authData.user.id);
 
         if (profileError) {
           console.error('Profile update error:', profileError);
+        }
+
+        // Create address for the user
+        const { error: addressError } = await supabase
+          .from('addresses')
+          .insert({
+            user_id: authData.user.id,
+            street_address: formData.addressLine1 + (formData.addressLine2 ? ', ' + formData.addressLine2 : ''),
+            city: formData.city || 'N/A',
+            state: formData.county,
+            postal_code: formData.postcode,
+            country: formData.country || 'UK',
+            is_default: true,
+          });
+
+        if (addressError) {
+          console.error('Address creation error:', addressError);
         }
       }
 
@@ -105,7 +111,7 @@ const NewCustomerSignup = () => {
           <Card className="shadow-sm">
             <CardContent className="p-8">
               <div className="text-center mb-6">
-                <div className="text-2xl font-bold text-primary mb-2">CN Foods</div>
+                <img src={natureliaLogo} alt="Naturelia" className="h-16 mx-auto mb-2" />
                 <h1 className="text-2xl font-semibold">New Customer Signup</h1>
               </div>
 

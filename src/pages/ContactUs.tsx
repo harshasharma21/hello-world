@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,22 +10,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface SalesRep {
+  id: string;
+  name: string;
+}
 
 const ContactUs = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [department, setDepartment] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [salesRepId, setSalesRepId] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadDropdownData();
+  }, []);
+
+  const loadDropdownData = async () => {
+    const [deptResult, repResult] = await Promise.all([
+      supabase.from('departments').select('id, name').eq('is_active', true).order('sort_order'),
+      supabase.from('sales_representatives').select('id, name').eq('is_active', true).order('sort_order')
+    ]);
+
+    if (deptResult.data) setDepartments(deptResult.data);
+    if (repResult.data) setSalesReps(repResult.data);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Thank you for your message. We'll get back to you as soon as possible!");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setDepartment("");
-    setMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const selectedDept = departments.find(d => d.id === departmentId);
+      const selectedRep = salesReps.find(r => r.id === salesRepId);
+
+      const { error } = await supabase.from('contact_submissions').insert({
+        name,
+        email,
+        phone: phone || null,
+        department_id: departmentId || null,
+        department_name: selectedDept?.name || null,
+        message,
+      });
+
+      if (error) throw error;
+
+      toast.success("Thank you for your message. We'll get back to you as soon as possible!");
+      setName("");
+      setEmail("");
+      setPhone("");
+      setDepartmentId("");
+      setSalesRepId("");
+      setMessage("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit form");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -58,15 +111,15 @@ const ContactUs = () => {
             
             {/* Company Info */}
             <div className="lg:w-1/2 lg:text-right">
-              <h3 className="font-semibold text-foreground mb-2">CN Foods Distributors Limited</h3>
+              <h3 className="font-semibold text-foreground mb-2">Naturelia Wholefood</h3>
               <div className="flex items-center lg:justify-end gap-2 text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 flex-shrink-0" />
-                <span className="text-sm">63-64 Garman Rd, London, N17 0UN, UK</span>
+                <span className="text-sm">123 Business Park, London, E1 6AN, UK</span>
               </div>
               <div className="flex items-center lg:justify-end gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4 flex-shrink-0" />
-                <a href="tel:+442084328328" className="text-sm text-primary hover:underline">
-                  +44 (0) 20 8432 8328
+                <a href="tel:+44123456789" className="text-sm text-primary hover:underline">
+                  +44 123 456 789
                 </a>
               </div>
             </div>
@@ -110,7 +163,7 @@ const ContactUs = () => {
 
                   <div>
                     <Label htmlFor="phone" className="text-sm font-medium">
-                      Your Telephone Number <span className="text-destructive">*</span>
+                      Your Telephone Number
                     </Label>
                     <div className="flex mt-1.5">
                       <div className="flex items-center gap-2 px-3 border border-r-0 border-input rounded-l-md bg-muted/50">
@@ -120,7 +173,6 @@ const ContactUs = () => {
                       <Input 
                         id="phone" 
                         type="tel" 
-                        required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="7123 456789"
@@ -134,21 +186,39 @@ const ContactUs = () => {
                       Department
                     </Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      For New supplier queries please apply here and we will get back to you:{" "}
+                      For New supplier queries please apply here:{" "}
                       <Link to="/new-supplier-signup" className="text-primary hover:underline">
-                        https://www.cnfoods.co.uk/new-supplier-signup
+                        New Supplier Signup
                       </Link>
                     </p>
-                    <Select value={department} onValueChange={setDepartment}>
+                    <Select value={departmentId} onValueChange={setDepartmentId}>
                       <SelectTrigger className="mt-1.5">
                         <SelectValue placeholder="Select a department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="customer-service">Customer Service</SelectItem>
-                        <SelectItem value="accounts">Accounts</SelectItem>
-                        <SelectItem value="logistics">Logistics</SelectItem>
-                        <SelectItem value="general">General Enquiry</SelectItem>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="salesRep" className="text-sm font-medium">
+                      Your Direct Sales Representative
+                    </Label>
+                    <Select value={salesRepId} onValueChange={setSalesRepId}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select your sales rep" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salesReps.map((rep) => (
+                          <SelectItem key={rep.id} value={rep.id}>
+                            {rep.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -168,8 +238,8 @@ const ContactUs = () => {
                     <p className="text-xs text-muted-foreground mt-1 text-right">{message.length}/2000</p>
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Submit
+                  <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </Button>
                 </form>
               </CardContent>
@@ -178,14 +248,14 @@ const ContactUs = () => {
             {/* Map */}
             <div className="h-[400px] lg:h-auto min-h-[400px] rounded-lg overflow-hidden shadow-sm">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2478.8547697280437!2d-0.05686952358398438!3d51.59728897182889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48761ed4c07e5c9b%3A0x7e8b63f9b7c4c6f0!2s63%20Garman%20Rd%2C%20London%20N17%200UN%2C%20UK!5e0!3m2!1sen!2sus!4v1635000000000!5m2!1sen!2sus"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2482.4086254802674!2d-0.07812402359414673!3d51.51833127181649!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48761cb3b5a8f9d5%3A0x4c4c4c4c4c4c4c4c!2sLondon%20E1%206AN%2C%20UK!5e0!3m2!1sen!2sus!4v1635000000000!5m2!1sen!2sus"
                 width="100%"
                 height="100%"
                 style={{ border: 0, minHeight: "400px" }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="CN Foods Location"
+                title="Naturelia Location"
               />
             </div>
           </div>

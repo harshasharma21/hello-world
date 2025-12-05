@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import natureliaLogo from "@/assets/naturelia-logo.jpg";
 
 export const Footer = () => {
   return (
@@ -8,9 +9,9 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-primary-foreground">CN Foods</h3>
+            <img src={natureliaLogo} alt="Naturelia" className="h-12 mb-4" />
             <p className="text-sm text-neutral-400 mb-4">
-              Your trusted B2B food supplier delivering quality products to businesses across the UK.
+              Your trusted B2B wholefood supplier delivering quality organic and natural products to businesses across the UK.
             </p>
             <div className="flex gap-3">
               <a href="#" className="hover:text-primary transition-smooth">
@@ -60,9 +61,9 @@ export const Footer = () => {
             <h4 className="font-semibold mb-4 text-primary-foreground">Customer Service</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-neutral-400 hover:text-primary transition-smooth">
+                <Link to="/contact-us" className="text-neutral-400 hover:text-primary transition-smooth">
                   Contact Us
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-neutral-400 hover:text-primary transition-smooth">
@@ -95,8 +96,8 @@ export const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="mailto:sales@cnfoods.com" className="hover:text-primary transition-smooth">
-                  sales@cnfoods.com
+                <a href="mailto:hello@naturelia.co.uk" className="hover:text-primary transition-smooth">
+                  hello@naturelia.co.uk
                 </a>
               </li>
             </ul>
@@ -104,7 +105,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-neutral-800 mt-8 pt-8 text-sm text-neutral-400 text-center">
-          <p>&copy; {new Date().getFullYear()} CN Foods. All rights reserved. | Privacy Policy | Terms & Conditions</p>
+          <p>&copy; {new Date().getFullYear()} Naturelia Wholefood. All rights reserved. | Privacy Policy | Terms & Conditions</p>
         </div>
       </div>
     </footer>

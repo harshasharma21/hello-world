@@ -18,12 +18,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -55,7 +49,7 @@ export const Header = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // ⬇️ Detect scroll to hide only the top bar
+  // Detect scroll to hide only the top bar
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 80);
@@ -87,7 +81,7 @@ export const Header = () => {
         isScrolled ? "shadow-sm" : ""
       }`}
     >
-      {/* ⬇️ Top Bar (Hides on scroll) */}
+      {/* Top Bar (Hides on scroll) */}
       <div
         className={`transition-all duration-300 overflow-hidden ${
           isScrolled ? "max-h-0 opacity-0" : "max-h-16 opacity-100"
@@ -105,11 +99,11 @@ export const Header = () => {
                 <span className="hidden sm:inline">+44 123 456 789</span>
               </a>
               <a
-                href="mailto:sales@cnfoods.com"
+                href="mailto:hello@naturelia.co.uk"
                 className="flex items-center gap-2 hover:opacity-80"
               >
                 <Mail className="h-4 w-4" />
-                <span className="hidden sm:inline">sales@cnfoods.com</span>
+                <span className="hidden sm:inline">hello@naturelia.co.uk</span>
               </a>
             </div>
 
@@ -272,7 +266,7 @@ export const Header = () => {
                     Get in Touch
                   </button>
 
-                  {/* Hover Box – ONLY appears when hovering Get in Touch */}
+                  {/* Hover Box */}
                   <div className="absolute md:right-0 top-full flex justify-center min-w-[200px] bg-background shadow-md rounded-md mt-1 opacity-0 invisible group-hover/getintouch:opacity-100 group-hover/getintouch:visible transition-all duration-200">
                     <div className="p-2 space-y-1 w-full">
                       <Link
