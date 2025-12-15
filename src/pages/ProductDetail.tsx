@@ -56,8 +56,13 @@ const RelatedProductCard = ({ product }: { product: DbProduct }) => {
   );
 };
 
-const ProductDetail = () => {
-  const { id } = useParams();
+interface ProductDetailProps {
+  productId?: string;
+}
+
+const ProductDetail = ({ productId }: ProductDetailProps) => {
+  const { id: paramId } = useParams();
+  const id = productId || paramId;
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
