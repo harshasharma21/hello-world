@@ -20,6 +20,7 @@ import NewSupplierSignup from "./pages/NewSupplierSignup";
 import ContactUs from "./pages/ContactUs";
 import CustomerServices from "./pages/CustomerServices";
 import GenerateImages from "./pages/GenerateImages";
+import ImportData from "./pages/ImportData";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/customer-services" element={<CustomerServices />} />
             <Route path="/generate-images" element={<GenerateImages />} />
+            <Route path="/import-data" element={<ImportData />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

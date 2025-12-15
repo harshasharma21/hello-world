@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,75 +10,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
-interface Department {
-  id: string;
-  name: string;
-}
-
-interface SalesRep {
-  id: string;
-  name: string;
-}
+const departments = [
+  { id: "sales", name: "Sales" },
+  { id: "support", name: "Customer Support" },
+  { id: "accounts", name: "Accounts" },
+  { id: "general", name: "General Enquiry" },
+];
 
 const ContactUs = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [departmentId, setDepartmentId] = useState("");
-  const [salesRepId, setSalesRepId] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
-
-  useEffect(() => {
-    loadDropdownData();
-  }, []);
-
-  const loadDropdownData = async () => {
-    const [deptResult, repResult] = await Promise.all([
-      supabase.from('departments').select('id, name').eq('is_active', true).order('sort_order'),
-      supabase.from('sales_representatives').select('id, name').eq('is_active', true).order('sort_order')
-    ]);
-
-    if (deptResult.data) setDepartments(deptResult.data);
-    if (repResult.data) setSalesReps(repResult.data);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      const selectedDept = departments.find(d => d.id === departmentId);
-      const selectedRep = salesReps.find(r => r.id === salesRepId);
-
-      const { error } = await supabase.from('contact_submissions').insert({
-        name,
-        email,
-        phone: phone || null,
-        department_id: departmentId || null,
-        department_name: selectedDept?.name || null,
-        message,
-      });
-
-      if (error) throw error;
-
-      toast.success("Thank you for your message. We'll get back to you as soon as possible!");
-      setName("");
-      setEmail("");
-      setPhone("");
-      setDepartmentId("");
-      setSalesRepId("");
-      setMessage("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit form");
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Simulate submission
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast.success("Thank you for your message. We'll get back to you as soon as possible!");
+    setName("");
+    setEmail("");
+    setPhone("");
+    setDepartmentId("");
+    setMessage("");
+    setIsSubmitting(false);
   };
 
   return (
@@ -143,7 +104,6 @@ const ContactUs = () => {
                       placeholder="Your full name"
                       className="mt-1.5"
                     />
-                    <p className="text-xs text-muted-foreground mt-1 text-right">{name.length}/255</p>
                   </div>
 
                   <div>
@@ -206,24 +166,6 @@ const ContactUs = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="salesRep" className="text-sm font-medium">
-                      Your Direct Sales Representative
-                    </Label>
-                    <Select value={salesRepId} onValueChange={setSalesRepId}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Select your sales rep" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {salesReps.map((rep) => (
-                          <SelectItem key={rep.id} value={rep.id}>
-                            {rep.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
                     <Label htmlFor="message" className="text-sm font-medium">
                       How Can We Help? <span className="text-destructive">*</span>
                     </Label>
@@ -235,7 +177,6 @@ const ContactUs = () => {
                       placeholder="Please provide details about your enquiry..."
                       className="min-h-[150px] mt-1.5"
                     />
-                    <p className="text-xs text-muted-foreground mt-1 text-right">{message.length}/2000</p>
                   </div>
 
                   <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
