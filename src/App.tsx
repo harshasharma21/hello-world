@@ -8,8 +8,7 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
-import Category from "./pages/Category";
-import ProductDetail from "./pages/ProductDetail";
+import ShopRouter from "./components/ShopRouter";
 import Cart from "./pages/Cart";
 import Liked from "./pages/Liked";
 import FastOrder from "./pages/FastOrder";
@@ -42,12 +41,8 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
-            {/* Product detail routes - handle various path patterns */}
-            <Route path="/shop/*/product/:id" element={<ProductDetail />} />
-            <Route path="/shop/product/:id" element={<ProductDetail />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            {/* Category routes - handle hierarchical paths */}
-            <Route path="/shop/*" element={<Category />} />
+            {/* ShopRouter handles both category and product routes */}
+            <Route path="/shop/*" element={<ShopRouter />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/liked" element={<Liked />} />
             <Route path="/fast-order" element={<FastOrder />} />

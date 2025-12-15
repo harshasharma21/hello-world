@@ -136,11 +136,7 @@ const Category = () => {
   // Parse the path
   const pathParts = fullPath?.split("/").filter(Boolean) || [];
 
-  // Check if this is a product detail page
-  const productIndex = pathParts.indexOf("product");
-  if (productIndex !== -1) {
-    return null; // ProductDetail will handle this
-  }
+  // Note: Product pages are now handled by ShopRouter
 
   // Get the last part to find current category
   const lastSlug = pathParts[pathParts.length - 1];
