@@ -14,13 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          parent_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image?: string | null
+          name: string
+          parent_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image?: string | null
+          name?: string
+          parent_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          barcode: string
+          base_unit: string | null
+          category_id: string | null
+          created_at: string
+          group_code: string | null
+          id: string
+          is_valid_barcode: boolean | null
+          name: string
+          price: number | null
+          updated_at: string
+        }
+        Insert: {
+          barcode: string
+          base_unit?: string | null
+          category_id?: string | null
+          created_at?: string
+          group_code?: string | null
+          id?: string
+          is_valid_barcode?: boolean | null
+          name: string
+          price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string
+          base_unit?: string | null
+          category_id?: string | null
+          created_at?: string
+          group_code?: string | null
+          id?: string
+          is_valid_barcode?: boolean | null
+          name?: string
+          price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_product_image_url: { Args: { barcode: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

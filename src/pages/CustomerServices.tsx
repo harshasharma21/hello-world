@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,17 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Department {
-  id: string;
-  name: string;
-}
-
-interface SalesRep {
-  id: string;
-  name: string;
-}
 
 const CustomerServices: React.FC = () => {
   const [shopName, setShopName] = useState("");
@@ -28,64 +17,24 @@ const CustomerServices: React.FC = () => {
   const [creditReason, setCreditReason] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [skus, setSkus] = useState("");
-  const [salesRepId, setSalesRepId] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
-
-  useEffect(() => {
-    loadDropdownData();
-  }, []);
-
-  const loadDropdownData = async () => {
-    const [deptResult, repResult] = await Promise.all([
-      supabase.from('departments').select('id, name').eq('is_active', true).order('sort_order'),
-      supabase.from('sales_representatives').select('id, name').eq('is_active', true).order('sort_order')
-    ]);
-
-    if (deptResult.data) setDepartments(deptResult.data);
-    if (repResult.data) setSalesReps(repResult.data);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      const selectedRep = salesReps.find(r => r.id === salesRepId);
+    // Simulate submission
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const { error } = await supabase.from('customer_service_requests').insert({
-        shop_name: shopName,
-        account_code: accountCode,
-        email: email || null,
-        invoice_date: invoiceDate || null,
-        credit_reason: creditReason,
-        additional_info: additionalInfo || null,
-        skus,
-        sales_rep_id: salesRepId || null,
-        sales_rep_name: selectedRep?.name || null,
-      });
-
-      if (error) throw error;
-
-      toast.success("Your request has been submitted. We'll get back to you soon!");
-      // Reset form
-      setShopName("");
-      setAccountCode("");
-      setEmail("");
-      setInvoiceDate("");
-      setCreditReason("");
-      setAdditionalInfo("");
-      setSkus("");
-      setSalesRepId("");
-      setDepartmentId("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit request");
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.success("Your request has been submitted. We'll get back to you soon!");
+    setShopName("");
+    setAccountCode("");
+    setEmail("");
+    setInvoiceDate("");
+    setCreditReason("");
+    setAdditionalInfo("");
+    setSkus("");
+    setIsSubmitting(false);
   };
 
   return (
@@ -114,7 +63,6 @@ const CustomerServices: React.FC = () => {
                       required
                       className="mt-1.5"
                     />
-                    <p className="text-xs text-muted-foreground mt-1 text-right">{shopName.length}/255</p>
                   </div>
 
                   <div>
@@ -146,24 +94,6 @@ const CustomerServices: React.FC = () => {
                       placeholder="your@email.com"
                       className="mt-1.5"
                     />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="department" className="text-sm font-medium">
-                      Department
-                    </Label>
-                    <Select value={departmentId} onValueChange={setDepartmentId}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div>
@@ -203,9 +133,6 @@ const CustomerServices: React.FC = () => {
                     <Label htmlFor="additionalInfo" className="text-sm font-medium">
                       Additional Info
                     </Label>
-                    <p className="text-xs text-muted-foreground">
-                      SKU of mispick or missing on delivery if you don't want to upload a picture.
-                    </p>
                     <Textarea 
                       id="additionalInfo" 
                       value={additionalInfo}
@@ -230,49 +157,6 @@ const CustomerServices: React.FC = () => {
                       required
                       className="mt-1.5"
                     />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="picture" className="text-sm font-medium">
-                      Picture
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-1.5">
-                      If missing please take picture of line on invoice
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-1.5">
-                      Need a clear picture of barcode and product as well as damage / mould
-                    </p>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors">
-                      <Input 
-                        id="picture" 
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                      />
-                      <label htmlFor="picture" className="cursor-pointer">
-                        <p className="text-sm text-muted-foreground">
-                          Choose a file to upload or drag and drop here
-                        </p>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="salesRep" className="text-sm font-medium">
-                      Your direct sales representative
-                    </Label>
-                    <Select value={salesRepId} onValueChange={setSalesRepId}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Select your sales rep" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {salesReps.map((rep) => (
-                          <SelectItem key={rep.id} value={rep.id}>
-                            {rep.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
