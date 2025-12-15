@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, TrendingUp, Shield, Truck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { categories } from "@/data/mockData";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { categoryImages } from "@/utils/imageHelper";
+import { FeaturedProducts } from "@/components/FeaturedProducts";
 
 const Index = () => {
   return (
@@ -46,7 +46,7 @@ const Index = () => {
                             Explore our wide range of {item.category.name.toLowerCase()} products. Quality assured, competitive prices.
                           </p>
                           <Button size="lg" asChild>
-                            <Link to={`/shop/category/${item.category.slug}-${item.category.id}`}>
+                            <Link to={`/shop/${item.category.slug}`}>
                               Browse {item.category.name}
                               <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
@@ -99,47 +99,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Categories */}
-        {/* <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8 md:mb-12">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">Shop by Category</h2>
-              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-                Browse our extensive range of quality food products across multiple categories
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
-              {categories.filter(cat => !cat.parentId).map((category) => {
-                return (
-                  <Link
-                    key={category.id}
-                    to={`/shop/category/${category.slug}-${category.id}`}
-                  >
-                    <Card className="group overflow-hidden hover:shadow-elegant-hover transition-smooth cursor-pointer h-full">
-                      <div className="aspect-[16/10] relative overflow-hidden">
-                        <img 
-                          src={categoryImages[`category-${category.slug}`]} 
-                          alt={category.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
-                        <div className="absolute bottom-3 md:bottom-4 left-3 md:left-4 right-3 md:right-4">
-                          <h3 className="text-xl md:text-2xl font-bold mb-1 group-hover:text-primary transition-smooth">
-                            {category.name}
-                          </h3>
-                          <p className="text-xs md:text-sm text-muted-foreground">
-                            {category.productCount} {category.productCount === 1 ? 'product' : 'products'}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section> */}
+        {/* Featured Products from Database */}
+        <FeaturedProducts />
 
         {/* CTA Section */}
         <section className="py-16 bg-gradient-to-r from-accent to-sage-green text-accent-foreground">

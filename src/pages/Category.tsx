@@ -11,7 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useProducts, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
+import { useProducts, DbProduct } from "@/hooks/useProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import {
@@ -67,10 +68,10 @@ const getGroupCodesForCategory = (categorySlug: string): string[] => {
   return Array.from(groupCodes);
 };
 
-// Product Card for category page
+// Product Card with API-fetched image
 const CategoryProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
-  const imageUrl = getProductImageUrl(product.barcode);
+  const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
   const categorySlug = getCategorySlugFromGroupCode(product.group_code);
   const productPath = buildProductPath(product.id, categorySlug);
 
@@ -94,14 +95,18 @@ const CategoryProductCard = ({ product }: { product: DbProduct }) => {
     <div className="group bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
       <Link to={productPath} className="block">
         <div className="aspect-square bg-muted relative overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/placeholder.svg";
-            }}
-          />
+          {imageLoading ? (
+            <Skeleton className="w-full h-full" />
+          ) : (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
+            />
+          )}
         </div>
       </Link>
       <div className="p-4">

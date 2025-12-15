@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import { useProduct, useProducts, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
+import { useProduct, useProducts, DbProduct } from "@/hooks/useProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 import { categories } from "@/data/mockData";
 import {
   getCategorySlugFromGroupCode,
@@ -19,9 +20,9 @@ import {
   buildProductPath,
 } from "@/utils/categoryMapping";
 
-// Related product card with proper links
+// Related product card with API-fetched image
 const RelatedProductCard = ({ product }: { product: DbProduct }) => {
-  const imageUrl = getProductImageUrl(product.barcode);
+  const { imageUrl, isLoading } = useProductImage(product.barcode);
   const categorySlug = getCategorySlugFromGroupCode(product.group_code);
   const productPath = buildProductPath(product.id, categorySlug);
 
@@ -29,14 +30,18 @@ const RelatedProductCard = ({ product }: { product: DbProduct }) => {
     <Link to={productPath} className="group">
       <div className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
         <div className="aspect-square bg-muted relative overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/placeholder.svg";
-            }}
-          />
+          {isLoading ? (
+            <Skeleton className="w-full h-full" />
+          ) : (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
+            />
+          )}
         </div>
         <div className="p-4">
           <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
@@ -59,6 +64,7 @@ const ProductDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
 
   const { data: product, isLoading } = useProduct(id || "");
+  const { imageUrl: productImage, isLoading: imageLoading } = useProductImage(product?.barcode || "");
   const { data: relatedProducts = [] } = useProducts({
     groupCode: product?.group_code || undefined,
     limit: 5,
@@ -130,8 +136,6 @@ const ProductDetail = () => {
     );
   }
 
-  const productImage = getProductImageUrl(product.barcode);
-
   const handleAddToCart = () => {
     const cartProduct = {
       id: product.id,
@@ -192,14 +196,18 @@ const ProductDetail = () => {
             {/* Image Section */}
             <div className="space-y-4">
               <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-                <img
-                  src={productImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.svg";
-                  }}
-                />
+                {imageLoading ? (
+                  <Skeleton className="w-full h-full" />
+                ) : (
+                  <img
+                    src={productImage}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
+                )}
               </div>
             </div>
 
