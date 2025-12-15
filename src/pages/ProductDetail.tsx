@@ -4,32 +4,41 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ProductCard } from "@/components/ProductCard";
-import { mockProducts, categories, tags } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import { productImages } from "@/utils/imageHelper";
+import { useProduct, useProducts, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
 
-// Build link path for a category in the breadcrumb
-const buildCategoryPath = (targetCategory: typeof categories[0] | null | undefined) => {
-  if (!targetCategory) return '/shop';
+// Simple product card for related products
+const RelatedProductCard = ({ product }: { product: DbProduct }) => {
+  const imageUrl = getProductImageUrl(product.barcode);
   
-  const chain: string[] = [];
-  let current: typeof categories[0] | undefined = targetCategory;
-  
-  while (current) {
-    chain.unshift(current.slug);
-    if (current.parentId) {
-      current = categories.find(c => c.id === current.parentId);
-    } else {
-      break;
-    }
-  }
-  
-  return `/shop/${chain.join('/')}`;
+  return (
+    <Link to={`/shop/product/${product.id}`} className="group">
+      <div className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
+        <div className="aspect-square bg-muted relative overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }}
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-lg font-bold text-primary mt-2">
+            £{(product.price || 0).toFixed(2)}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
 };
 
 const ProductDetail = () => {
@@ -39,7 +48,35 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
 
-  const product = mockProducts.find(p => p.id === id);
+  const { data: product, isLoading } = useProduct(id || "");
+  const { data: relatedProducts = [] } = useProducts({
+    groupCode: product?.group_code || undefined,
+    limit: 5,
+  });
+
+  // Filter out current product from related
+  const filteredRelated = relatedProducts.filter(p => p.id !== id).slice(0, 4);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Skeleton className="aspect-square rounded-lg" />
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -55,20 +92,21 @@ const ProductDetail = () => {
     );
   }
 
-  const productImage = product.images[0] ? productImages[product.images[0]] || "/placeholder.svg" : "/placeholder.svg";
-  
-  const category = categories.find(c => c.slug === product.category);
-  const subcategory = product.subcategory ? categories.find(c => c.slug === product.subcategory) : null;
-
-  const relatedProducts = mockProducts
-    .filter(p => 
-      p.id !== product.id && 
-      (p.category === product.category || p.subcategory === product.subcategory)
-    )
-    .slice(0, 4);
+  const productImage = getProductImageUrl(product.barcode);
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    const cartProduct = {
+      id: product.id,
+      sku: product.barcode,
+      name: product.name,
+      description: product.group_code || "",
+      price: product.price || 0,
+      images: [productImage],
+      category: product.group_code || "",
+      stock: 100,
+      inStock: true,
+    };
+    addItem(cartProduct as any, quantity);
     toast.success(`Added ${quantity}x ${product.name} to cart`);
   };
 
@@ -83,40 +121,29 @@ const ProductDetail = () => {
       
       <main className="flex-1">
         {/* Breadcrumb */}
-        <div className="bg-neutral-50 border-b border-border">
-          <div className="container mx-auto px-4 py-4">
+        <div className="bg-muted/50 border-b border-border">
+          <div className="container mx-auto px-4 py-3">
             <nav className="flex items-center gap-2 text-sm flex-wrap">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-smooth">
+              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
                 Home
               </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-smooth">
+              <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">
                 Shop
               </Link>
-              {category && (
-                <>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Link
-                to={buildCategoryPath(category)}
-                className="text-muted-foreground hover:text-foreground transition-smooth"
-              >
-                {category.name}
-              </Link>
-                </>
-              )}
-              {subcategory && (
+              {product.group_code && (
                 <>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Link
-                    to={buildCategoryPath(subcategory)}
-                    className="text-muted-foreground hover:text-foreground transition-smooth"
+                    to={`/shop?category=${encodeURIComponent(product.group_code)}`}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {subcategory.name}
+                    {product.group_code}
                   </Link>
                 </>
               )}
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground">{product.name}</span>
+              <span className="font-medium text-foreground line-clamp-1">{product.name}</span>
             </nav>
           </div>
         </div>
@@ -126,70 +153,42 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
             {/* Image Section */}
             <div className="space-y-4">
-              <div className="relative aspect-square bg-neutral-100 rounded-lg overflow-hidden">
+              <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
                 <img
                   src={productImage}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
                 />
-                {product.stock < 50 && product.inStock && (
-                  <Badge className="absolute top-4 left-4 bg-secondary text-secondary-foreground">
-                    Low Stock
-                  </Badge>
-                )}
-                {!product.inStock && (
-                  <Badge variant="destructive" className="absolute top-4 left-4">
-                    Out of Stock
-                  </Badge>
-                )}
               </div>
             </div>
 
             {/* Product Info */}
             <div className="space-y-6">
               <div>
-                <p className="text-sm text-muted-foreground font-mono mb-2">SKU: {product.sku}</p>
-                {product.brand && (
-                  <p className="text-sm text-muted-foreground mb-2">Brand: {product.brand}</p>
+                <p className="text-sm text-muted-foreground font-mono mb-2">
+                  Barcode: {product.barcode}
+                </p>
+                {product.group_code && (
+                  <Badge variant="secondary" className="mb-3">
+                    {product.group_code}
+                  </Badge>
                 )}
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
-                {product.shortDescription && (
-                  <p className="text-lg text-muted-foreground mb-4">{product.shortDescription}</p>
+                {product.base_unit && (
+                  <p className="text-muted-foreground">Unit: {product.base_unit}</p>
                 )}
               </div>
 
               <div className="flex items-baseline gap-4">
-                <p className="text-4xl font-bold text-primary">£{product.price.toFixed(2)}</p>
-                {product.packSize && (
-                  <p className="text-muted-foreground">per {product.packSize} {product.unit}</p>
-                )}
+                <p className="text-4xl font-bold text-primary">
+                  £{(product.price || 0).toFixed(2)}
+                </p>
               </div>
 
               <Separator />
-
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Description</h3>
-                <p className="text-muted-foreground leading-relaxed">{product.description}</p>
-              </div>
-
-              <Separator />
-
-              {/* Tags */}
-              {product.tags && product.tags.length > 0 && (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {product.tags.map((tagId) => {
-                      const tag = tags.find(t => t.id === tagId);
-                      return tag ? (
-                        <Badge key={tagId} variant="secondary">
-                          {tag.name}
-                        </Badge>
-                      ) : null;
-                    })}
-                  </div>
-                  <Separator />
-                </>
-              )}
 
               {/* Quantity & Actions */}
               <div className="space-y-4">
@@ -200,7 +199,6 @@ const ProductDetail = () => {
                       size="icon"
                       className="h-12 w-12 rounded-none"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={!product.inStock}
                     >
                       <Minus className="h-5 w-5" />
                     </Button>
@@ -208,22 +206,17 @@ const ProductDetail = () => {
                       type="number"
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-16 text-center border-0 outline-none text-lg"
-                      disabled={!product.inStock}
+                      className="w-16 text-center border-0 outline-none text-lg bg-transparent"
                     />
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-12 w-12 rounded-none"
                       onClick={() => setQuantity(quantity + 1)}
-                      disabled={!product.inStock}
                     >
                       <Plus className="h-5 w-5" />
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {product.inStock ? `${product.stock} units in stock` : "Currently unavailable"}
-                  </p>
                 </div>
 
                 <div className="flex gap-3">
@@ -231,7 +224,6 @@ const ProductDetail = () => {
                     size="lg"
                     className="flex-1 h-12 text-base"
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add to Cart
@@ -283,17 +275,19 @@ const ProductDetail = () => {
           </div>
 
           {/* Related Products */}
-          {relatedProducts.length > 0 && (
+          {filteredRelated.length > 0 && (
             <section className="mt-16">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold">Related Products</h2>
                 <Button variant="outline" asChild>
-                  <Link to="/shop">View All</Link>
+                  <Link to={`/shop?category=${encodeURIComponent(product.group_code || "")}`}>
+                    View All
+                  </Link>
                 </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map((relatedProduct) => (
-                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                {filteredRelated.map((relatedProduct) => (
+                  <RelatedProductCard key={relatedProduct.id} product={relatedProduct} />
                 ))}
               </div>
             </section>
