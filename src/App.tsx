@@ -42,8 +42,12 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
+            {/* Product detail routes - handle various path patterns */}
+            <Route path="/shop/*/product/:id" element={<ProductDetail />} />
             <Route path="/shop/product/:id" element={<ProductDetail />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            {/* Category routes - handle hierarchical paths */}
+            <Route path="/shop/*" element={<Category />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/liked" element={<Liked />} />
             <Route path="/fast-order" element={<FastOrder />} />
