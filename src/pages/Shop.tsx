@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,25 +7,34 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight } from "lucide-react";
-import { useProducts, useGroupCodes, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
+import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown } from "lucide-react";
+import { useProducts, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
+import { categories } from "@/data/mockData";
+import { 
+  getCategorySlugFromGroupCode, 
+  buildCategoryPath, 
+  buildProductPath,
+  getSubcategories,
+  getRootCategories 
+} from "@/utils/categoryMapping";
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-// Simple Product Card for Supabase products
+// Product Card component
 const ShopProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
   const imageUrl = getProductImageUrl(product.barcode);
-  
+  const categorySlug = getCategorySlugFromGroupCode(product.group_code);
+  const productPath = buildProductPath(product.id, categorySlug);
+
   const handleAddToCart = () => {
     const cartProduct = {
       id: product.id,
@@ -44,7 +53,7 @@ const ShopProductCard = ({ product }: { product: DbProduct }) => {
 
   return (
     <div className="group bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
-      <Link to={`/shop/product/${product.id}`} className="block">
+      <Link to={productPath} className="block">
         <div className="aspect-square bg-muted relative overflow-hidden">
           <img
             src={imageUrl}
@@ -57,17 +66,15 @@ const ShopProductCard = ({ product }: { product: DbProduct }) => {
         </div>
       </Link>
       <div className="p-4">
-        <Link to={`/shop/product/${product.id}`}>
+        <Link to={productPath}>
           <h3 className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors mb-1">
             {product.name}
           </h3>
         </Link>
-        <p className="text-xs text-muted-foreground mb-2">
-          {product.barcode}
-        </p>
-        {product.group_code && (
-          <Link 
-            to={`/shop?category=${encodeURIComponent(product.group_code)}`}
+        <p className="text-xs text-muted-foreground mb-2">{product.barcode}</p>
+        {categorySlug && (
+          <Link
+            to={buildCategoryPath(categorySlug)}
             className="text-xs text-primary hover:underline"
           >
             {product.group_code}
@@ -87,26 +94,21 @@ const ShopProductCard = ({ product }: { product: DbProduct }) => {
 };
 
 const Shop = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    searchParams.get("category") || null
-  );
+
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "name");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page") || "1")
-  );
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
   const itemsPerPage = 32;
 
-  // Fetch products and categories from Supabase
+  // Fetch all products from Supabase
   const { data: products = [], isLoading: productsLoading } = useProducts({
-    groupCode: selectedCategory || undefined,
     search: searchQuery || undefined,
   });
-  const { data: groupCodes = [], isLoading: categoriesLoading } = useGroupCodes();
 
   // Update URL params
   const updateParams = (updates: Record<string, string | null>) => {
@@ -121,10 +123,16 @@ const Shop = () => {
     setSearchParams(params, { replace: true });
   };
 
-  const handleCategorySelect = (category: string | null) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    updateParams({ category, page: null });
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const handleCategoryClick = (slug: string) => {
+    navigate(buildCategoryPath(slug));
   };
 
   // Sort products
@@ -151,8 +159,10 @@ const Shop = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     updateParams({ page: page > 1 ? page.toString() : null });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const rootCategories = getRootCategories();
 
   const FilterContent = () => (
     <>
@@ -160,53 +170,111 @@ const Shop = () => {
         <h2 className="font-semibold text-lg mb-4">Categories</h2>
         <div className="space-y-1">
           {/* All Products */}
-          <div 
-            className={`flex items-center py-2 px-3 rounded cursor-pointer transition-colors ${
-              !selectedCategory ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
-            }`}
-            onClick={() => handleCategorySelect(null)}
-          >
-            <div className={`w-2 h-2 rounded-full mr-3 ${!selectedCategory ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+          <div className="flex items-center py-2 px-3 rounded bg-primary/10 text-primary font-medium">
+            <div className="w-2 h-2 rounded-full mr-3 bg-primary" />
             <span className="text-sm">All Products</span>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {products.length}
-            </span>
+            <span className="ml-auto text-xs text-muted-foreground">{products.length}</span>
           </div>
 
-          {categoriesLoading ? (
-            <div className="space-y-2 mt-2">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-8 w-full" />
-              ))}
-            </div>
-          ) : (
-            groupCodes.map((category) => {
-              const isSelected = selectedCategory === category;
-              return (
-                <div 
-                  key={category}
-                  className={`flex items-center py-2 px-3 rounded cursor-pointer transition-colors ${
-                    isSelected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'
-                  }`}
-                  onClick={() => handleCategorySelect(category)}
+          {/* Hierarchical Categories */}
+          {rootCategories.map((cat) => {
+            const level2Categories = getSubcategories(cat.id);
+            const hasSubcategories = level2Categories.length > 0;
+
+            return (
+              <div key={cat.id} className="space-y-0.5">
+                <div
+                  className="flex items-center py-2 px-3 rounded cursor-pointer transition-colors hover:bg-muted"
+                  onClick={() => {
+                    if (hasSubcategories) {
+                      toggleCategory(cat.id);
+                    } else {
+                      handleCategoryClick(cat.slug);
+                    }
+                  }}
                 >
-                  <div className={`w-2 h-2 rounded-full mr-3 ${isSelected ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                  <span className="text-sm">{category}</span>
+                  <div className="w-2 h-2 rounded-full mr-3 bg-muted-foreground/30" />
+                  <span className="text-sm flex-1">{cat.name}</span>
+                  {hasSubcategories && (
+                    <div className="ml-auto">
+                      {openCategories.includes(cat.id) ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </div>
+                  )}
                 </div>
-              );
-            })
-          )}
+
+                {/* Level 2 */}
+                {hasSubcategories && openCategories.includes(cat.id) && (
+                  <div className="ml-5 space-y-0.5">
+                    {level2Categories.map((subcat) => {
+                      const level3Categories = getSubcategories(subcat.id);
+                      const hasLevel3 = level3Categories.length > 0;
+
+                      return (
+                        <div key={subcat.id} className="space-y-0.5">
+                          <div
+                            className="flex items-center py-1 px-2 rounded cursor-pointer transition-colors hover:bg-muted"
+                            onClick={() => {
+                              if (hasLevel3) {
+                                toggleCategory(subcat.id);
+                              } else {
+                                handleCategoryClick(subcat.slug);
+                              }
+                            }}
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                            <span className="text-sm text-muted-foreground ml-2 flex-1">
+                              {subcat.name}
+                            </span>
+                            {hasLevel3 && (
+                              <div className="ml-auto">
+                                {openCategories.includes(subcat.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Level 3 */}
+                          {hasLevel3 && openCategories.includes(subcat.id) && (
+                            <div className="ml-5 space-y-0.5">
+                              {level3Categories.map((subsubcat) => (
+                                <div
+                                  key={subsubcat.id}
+                                  className="flex items-center py-1 px-2 ml-3 rounded cursor-pointer transition-colors hover:bg-muted"
+                                  onClick={() => handleCategoryClick(subsubcat.slug)}
+                                >
+                                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                                  <span className="text-sm text-muted-foreground ml-2">
+                                    {subsubcat.name}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <Button 
-        variant="outline" 
-        className="w-full mt-6" 
+      <Button
+        variant="outline"
+        className="w-full mt-6"
         onClick={() => {
-          setSelectedCategory(null);
           setSearchQuery("");
           setCurrentPage(1);
-          updateParams({ category: null, search: null, page: null });
+          updateParams({ search: null, page: null });
         }}
       >
         Clear Filters
@@ -217,7 +285,7 @@ const Shop = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1">
         {/* Breadcrumb */}
         <div className="bg-muted/50 border-b border-border">
@@ -227,31 +295,16 @@ const Shop = () => {
                 Home
               </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              {selectedCategory ? (
-                <>
-                  <Link to="/shop" className="text-muted-foreground hover:text-foreground">
-                    Shop
-                  </Link>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-foreground">{selectedCategory}</span>
-                </>
-              ) : (
-                <span className="font-medium text-foreground">Shop</span>
-              )}
+              <span className="font-medium text-foreground">Shop</span>
             </nav>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-4 md:py-8">
           <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
-              {selectedCategory || "All Products"}
-            </h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">All Products</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              {selectedCategory 
-                ? `Browse products in ${selectedCategory}`
-                : "Browse our complete range of products"
-              }
+              Browse our complete range of products
             </p>
           </div>
 
@@ -263,11 +316,6 @@ const Shop = () => {
                   <Button variant="outline" className="w-full">
                     <SlidersHorizontal className="h-4 w-4 mr-2" />
                     Filters
-                    {selectedCategory && (
-                      <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                        1
-                      </span>
-                    )}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80 overflow-y-auto">
@@ -354,10 +402,13 @@ const Shop = () => {
                 </div>
               ) : (
                 <>
-                  <div className={viewMode === "grid" 
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
-                    : "space-y-4"
-                  }>
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
+                        : "space-y-4"
+                    }
+                  >
                     {currentProducts.map((product) => (
                       <ShopProductCard key={product.id} product={product} />
                     ))}
@@ -368,16 +419,15 @@ const Shop = () => {
                       <p className="text-base md:text-lg text-muted-foreground">
                         No products found{searchQuery ? ` matching "${searchQuery}"` : ""}.
                       </p>
-                      <Button 
-                        variant="link" 
+                      <Button
+                        variant="link"
                         onClick={() => {
-                          setSelectedCategory(null);
                           setSearchQuery("");
-                          updateParams({ category: null, search: null });
-                        }} 
+                          updateParams({ search: null });
+                        }}
                         className="mt-4"
                       >
-                        Clear all filters
+                        Clear search
                       </Button>
                     </div>
                   )}
@@ -391,12 +441,14 @@ const Shop = () => {
                       <Pagination>
                         <PaginationContent className="flex-wrap gap-1">
                           <PaginationItem>
-                            <PaginationPrevious 
+                            <PaginationPrevious
                               onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              className={
+                                currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                              }
                             />
                           </PaginationItem>
-                          
+
                           {[...Array(Math.min(5, totalPages))].map((_, i) => {
                             let page: number;
                             if (totalPages <= 5) {
@@ -408,7 +460,7 @@ const Shop = () => {
                             } else {
                               page = currentPage - 2 + i;
                             }
-                            
+
                             return (
                               <PaginationItem key={page}>
                                 <PaginationLink
@@ -424,8 +476,14 @@ const Shop = () => {
 
                           <PaginationItem>
                             <PaginationNext
-                              onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              onClick={() =>
+                                currentPage < totalPages && handlePageChange(currentPage + 1)
+                              }
+                              className={
+                                currentPage === totalPages
+                                  ? "pointer-events-none opacity-50"
+                                  : "cursor-pointer"
+                              }
                             />
                           </PaginationItem>
                         </PaginationContent>

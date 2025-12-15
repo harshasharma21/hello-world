@@ -10,13 +10,23 @@ import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield 
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { useProduct, useProducts, getProductImageUrl, DbProduct } from "@/hooks/useProducts";
+import { categories } from "@/data/mockData";
+import {
+  getCategorySlugFromGroupCode,
+  getCategoryBySlug,
+  getCategoryById,
+  buildCategoryPath,
+  buildProductPath,
+} from "@/utils/categoryMapping";
 
-// Simple product card for related products
+// Related product card with proper links
 const RelatedProductCard = ({ product }: { product: DbProduct }) => {
   const imageUrl = getProductImageUrl(product.barcode);
-  
+  const categorySlug = getCategorySlugFromGroupCode(product.group_code);
+  const productPath = buildProductPath(product.id, categorySlug);
+
   return (
-    <Link to={`/shop/product/${product.id}`} className="group">
+    <Link to={productPath} className="group">
       <div className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
         <div className="aspect-square bg-muted relative overflow-hidden">
           <img
@@ -55,7 +65,35 @@ const ProductDetail = () => {
   });
 
   // Filter out current product from related
-  const filteredRelated = relatedProducts.filter(p => p.id !== id).slice(0, 4);
+  const filteredRelated = relatedProducts.filter((p) => p.id !== id).slice(0, 4);
+
+  // Build category breadcrumb chain
+  const buildBreadcrumbChain = () => {
+    if (!product?.group_code) return [];
+
+    const categorySlug = getCategorySlugFromGroupCode(product.group_code);
+    if (!categorySlug) return [];
+
+    const category = getCategoryBySlug(categorySlug);
+    if (!category) return [];
+
+    const chain: typeof categories = [];
+    let current = category;
+
+    while (current) {
+      chain.unshift(current);
+      if (current.parentId) {
+        current = getCategoryById(current.parentId);
+      } else {
+        break;
+      }
+    }
+
+    return chain;
+  };
+
+  const breadcrumbChain = buildBreadcrumbChain();
+  const categorySlug = product ? getCategorySlugFromGroupCode(product.group_code) : null;
 
   if (isLoading) {
     return (
@@ -118,7 +156,7 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1">
         {/* Breadcrumb */}
         <div className="bg-muted/50 border-b border-border">
@@ -131,17 +169,17 @@ const ProductDetail = () => {
               <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">
                 Shop
               </Link>
-              {product.group_code && (
-                <>
+              {breadcrumbChain.map((cat) => (
+                <span key={cat.id} className="flex items-center gap-2">
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Link
-                    to={`/shop?category=${encodeURIComponent(product.group_code)}`}
+                    to={buildCategoryPath(cat.slug)}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {product.group_code}
+                    {cat.name}
                   </Link>
-                </>
-              )}
+                </span>
+              ))}
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-foreground line-clamp-1">{product.name}</span>
             </nav>
@@ -171,10 +209,12 @@ const ProductDetail = () => {
                 <p className="text-sm text-muted-foreground font-mono mb-2">
                   Barcode: {product.barcode}
                 </p>
-                {product.group_code && (
-                  <Badge variant="secondary" className="mb-3">
-                    {product.group_code}
-                  </Badge>
+                {product.group_code && categorySlug && (
+                  <Link to={buildCategoryPath(categorySlug)}>
+                    <Badge variant="secondary" className="mb-3 cursor-pointer hover:bg-secondary/80">
+                      {product.group_code}
+                    </Badge>
+                  </Link>
                 )}
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
                 {product.base_unit && (
@@ -220,11 +260,7 @@ const ProductDetail = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button
-                    size="lg"
-                    className="flex-1 h-12 text-base"
-                    onClick={handleAddToCart}
-                  >
+                  <Button size="lg" className="flex-1 h-12 text-base" onClick={handleAddToCart}>
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add to Cart
                   </Button>
@@ -275,14 +311,12 @@ const ProductDetail = () => {
           </div>
 
           {/* Related Products */}
-          {filteredRelated.length > 0 && (
+          {filteredRelated.length > 0 && categorySlug && (
             <section className="mt-16">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold">Related Products</h2>
                 <Button variant="outline" asChild>
-                  <Link to={`/shop?category=${encodeURIComponent(product.group_code || "")}`}>
-                    View All
-                  </Link>
+                  <Link to={buildCategoryPath(categorySlug)}>View All</Link>
                 </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
