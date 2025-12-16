@@ -433,7 +433,7 @@ const Shop = () => {
 
             {/* Desktop Filters Sidebar */}
             <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-4 border-r border-border">
+              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-4 border-r border-border scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <FilterContent />
               </div>
             </aside>
