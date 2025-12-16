@@ -10,10 +10,7 @@ export default defineConfig(({ mode }) => ({
     host: true,
     port: 5173,
     allowedHosts: [
-      "store-oxsn.onrender.com",
-      "store-qk5w.onrender.com",
-      "natureliawholefood.com",
-      "www.natureliawholefood.com",
+    kind-connect-f9mp.onrender.com
     ],
   },
   plugins: [
