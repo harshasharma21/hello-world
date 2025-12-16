@@ -1,168 +1,201 @@
-// Keyword-based product categorization
-// Products are categorized by matching keywords in their names
+// Keyword-based product categorization with subcategory support
+// Products are categorized to the most specific matching subcategory
 
-const categoryKeywords: Record<string, string[]> = {
-  // Soft Drinks
-  "soft-drinks-better": [
-    "cola", "pepsi", "fanta", "sprite", "7up", "7-up", "mirinda", "tango", 
-    "lucozade", "ribena", "vimto", "irn bru", "dr pepper", "mountain dew",
-    "lemonade", "orangeade", "squash", "cordial", "juice", "water", "mineral",
-    "sparkling", "still water", "energy drink", "red bull", "monster", "relentless",
-    "fizzy", "soda", "pop", "soft drink", "fruit shoot", "capri sun", "oasis",
-    "j2o", "appletiser", "schweppes", "barr", "um bongo", "rubicon", "ting",
-    "ginger beer", "ginger ale", "tonic", "bitter lemon", "elderflower"
-  ],
+// Maps keywords to the most specific category slug
+// Order matters - more specific categories should come first
+const categoryKeywords: { slug: string; keywords: string[] }[] = [
+  // ===== CHEESE SUBCATEGORIES (most specific first) =====
+  { slug: "cheddar", keywords: ["cheddar", "mature cheese", "mild cheese", "vintage cheese"] },
+  { slug: "cheese-spreadable", keywords: ["cream cheese", "philadelphia", "cheese spread", "spreadable cheese"] },
+  { slug: "greek-cheese", keywords: ["feta", "halloumi"] },
+  { slug: "italian-cheese", keywords: ["mozzarella", "parmesan", "parmigiano", "pecorino", "gorgonzola", "mascarpone", "ricotta", "provolone"] },
+  { slug: "french-cheese", keywords: ["brie", "camembert", "roquefort", "comte", "gruyere"] },
+  { slug: "south-asian-cheese", keywords: ["paneer", "labneh"] },
+  { slug: "sliced-grated", keywords: ["sliced cheese", "grated cheese", "cheese slices", "shredded cheese"] },
+  { slug: "other-european", keywords: ["gouda", "edam", "emmental", "swiss cheese", "manchego", "stilton"] },
+  { slug: "cheese", keywords: ["cheese", "cottage cheese"] },
+
+  // ===== DAIRY SUBCATEGORIES =====
+  { slug: "butter-margarine-ghee", keywords: ["butter", "margarine", "ghee", "lurpak", "anchor butter", "flora", "clover", "bertolli"] },
+  { slug: "yoghurt-greek", keywords: ["greek yogurt", "greek yoghurt", "greek style"] },
+  { slug: "fruit-flavoured", keywords: ["fruit yogurt", "fruit yoghurt", "flavoured yogurt", "strawberry yogurt", "muller corner"] },
+  { slug: "natural-yoghurt", keywords: ["natural yogurt", "natural yoghurt", "plain yogurt"] },
+  { slug: "kids-yoghurt", keywords: ["petit filous", "kids yogurt", "fromage frais"] },
+  { slug: "drinking-yoghurt", keywords: ["drinking yogurt", "yogurt drink", "actimel", "yakult"] },
+  { slug: "yoghurt", keywords: ["yogurt", "yoghurt", "muller", "activia", "danone"] },
+  { slug: "single-double", keywords: ["single cream", "double cream", "extra thick"] },
+  { slug: "sour-cream", keywords: ["sour cream", "soured cream"] },
+  { slug: "creme-fraiche", keywords: ["creme fraiche", "crème fraîche"] },
+  { slug: "whipping-cream", keywords: ["whipping cream", "whipped cream"] },
+  { slug: "clotted-cream", keywords: ["clotted cream"] },
+  { slug: "cream", keywords: ["cream"] },
+  { slug: "kefir", keywords: ["kefir"] },
+  { slug: "dips", keywords: ["hummus", "guacamole", "tzatziki", "dip"] },
+  { slug: "milk", keywords: ["milk", "semi skimmed", "skimmed milk", "whole milk", "cravendale"] },
+  { slug: "dairy", keywords: ["dairy"] },
+
+  // ===== DRINKS SUBCATEGORIES =====
+  { slug: "beer", keywords: ["beer", "lager", "ale", "stout", "ipa", "pilsner", "heineken", "budweiser", "corona", "stella", "carling", "fosters", "peroni"] },
+  { slug: "cider", keywords: ["cider", "strongbow", "magners", "kopparberg", "rekorderlig", "thatchers"] },
+  { slug: "red-wine", keywords: ["red wine", "merlot", "cabernet", "pinot noir", "shiraz", "rioja"] },
+  { slug: "white-wine", keywords: ["white wine", "chardonnay", "sauvignon blanc", "pinot grigio", "riesling"] },
+  { slug: "rose-wine", keywords: ["rose wine", "rosé", "blush wine"] },
+  { slug: "champagne-sparkling", keywords: ["champagne", "prosecco", "sparkling wine", "cava", "fizz"] },
+  { slug: "wine", keywords: ["wine"] },
+  { slug: "alcohol-free-beer", keywords: ["alcohol free beer", "non alcoholic beer", "0% beer", "low alcohol"] },
+  { slug: "alcohol-free-drinks", keywords: ["alcohol free", "non alcoholic", "mocktail", "0%"] },
+  { slug: "beer-wine-spirits", keywords: ["vodka", "whisky", "whiskey", "gin", "rum", "brandy", "cognac", "tequila", "liqueur", "bourbon", "smirnoff", "absolut", "gordons", "bacardi", "captain morgan"] },
   
-  // Alcoholic Drinks
-  "drinks": [
-    "beer", "lager", "ale", "cider", "wine", "vodka", "whisky", "whiskey",
-    "gin", "rum", "brandy", "cognac", "champagne", "prosecco", "sherry",
-    "port", "vermouth", "liqueur", "absinthe", "tequila", "bourbon",
-    "stella", "heineken", "budweiser", "corona", "carling", "fosters",
-    "strongbow", "magners", "kopparberg", "smirnoff", "absolut", "gordons"
-  ],
+  { slug: "juice", keywords: ["juice", "orange juice", "apple juice", "cranberry", "tropicana", "innocent juice"] },
+  { slug: "smoothies", keywords: ["smoothie", "innocent smoothie", "naked juice"] },
+  { slug: "shots", keywords: ["ginger shot", "wellness shot", "turmeric shot"] },
   
-  // Coffee & Tea
-  "coffee-tea-hot-drinks": [
-    "coffee", "tea", "nescafe", "kenco", "douwe egberts", "lavazza",
-    "espresso", "cappuccino", "latte", "mocha", "americano", "instant coffee",
-    "ground coffee", "coffee beans", "decaf", "tetley", "pg tips", "twinings",
-    "yorkshire tea", "green tea", "herbal tea", "chai", "earl grey", "english breakfast",
-    "hot chocolate", "cocoa", "horlicks", "ovaltine", "milo", "drinking chocolate",
-    "coffee mate", "creamer"
-  ],
+  { slug: "drinks-milk", keywords: ["fresh milk", "whole milk", "semi-skimmed"] },
+  { slug: "drinks-kefir", keywords: ["kefir drink", "milk kefir"] },
+  { slug: "flavoured-milk", keywords: ["chocolate milk", "strawberry milk", "flavoured milk", "milkshake", "frijj", "yazoo"] },
+  { slug: "milk-alts", keywords: ["oat milk", "almond milk", "soya milk", "coconut milk", "oatly", "alpro"] },
   
-  // Crisps & Savoury Snacks
-  "crisps-savoury": [
-    "crisps", "chips", "doritos", "pringles", "walkers", "lays", "kettle",
-    "sensations", "mccoys", "monster munch", "wotsits", "quavers", "skips",
-    "hula hoops", "french fries", "nik naks", "twiglets", "mini cheddars",
-    "popcorn", "pretzels", "crackers", "rice cakes", "breadsticks",
-    "nuts", "peanuts", "cashews", "almonds", "pistachios", "mixed nuts",
-    "bombay mix", "tortilla chips", "nachos", "popchips", "kettle chips"
-  ],
+  { slug: "classic-soft-drinks", keywords: ["cola", "pepsi", "coca cola", "fanta", "sprite", "7up", "7-up", "mirinda", "tango", "dr pepper", "mountain dew", "lemonade", "orangeade", "irn bru", "barr"] },
+  { slug: "iced-tea", keywords: ["iced tea", "ice tea", "lipton"] },
+  { slug: "kombucha", keywords: ["kombucha", "live soda"] },
+  { slug: "prebiotic", keywords: ["prebiotic", "poppi", "olipop"] },
+  { slug: "energy", keywords: ["energy drink", "red bull", "monster energy", "relentless", "lucozade", "boost energy"] },
+  { slug: "vitamin-protein", keywords: ["vitamin water", "protein water"] },
+  { slug: "soft-drinks-better", keywords: ["soft drink", "fizzy", "soda", "pop", "squash", "cordial", "ribena", "vimto", "robinson", "j2o", "appletiser", "schweppes", "tonic", "ginger beer", "ginger ale", "elderflower", "fruit shoot", "capri sun", "oasis", "um bongo", "rubicon", "ting"] },
   
-  // Chocolate & Confectionery
-  "chocolate-confectionery": [
-    "chocolate", "cadbury", "dairy milk", "galaxy", "mars", "snickers", "twix",
-    "kit kat", "kitkat", "bounty", "milky way", "maltesers", "m&ms", "smarties",
-    "aero", "wispa", "crunchie", "double decker", "boost", "picnic", "turkish delight",
-    "ferrero", "rocher", "lindt", "toblerone", "kinder", "nutella",
-    "sweets", "candy", "haribo", "starburst", "skittles", "fruit pastilles",
-    "wine gums", "jelly babies", "liquorice", "fudge", "toffee", "caramel",
-    "lollipop", "chewing gum", "mints", "polo", "tic tac", "mentos",
-    "trebor", "extra", "airwaves", "wrigley", "hubba bubba", "fruit gums"
-  ],
+  { slug: "flavoured-water", keywords: ["flavoured water", "vitamin water", "sparkling water"] },
+  { slug: "water", keywords: ["water", "mineral water", "still water", "evian", "volvic", "buxton", "highland spring"] },
   
-  // Dairy
-  "dairy": [
-    "milk", "cheese", "yogurt", "yoghurt", "butter", "cream", "margarine",
-    "cheddar", "mozzarella", "parmesan", "brie", "camembert", "stilton",
-    "cottage cheese", "cream cheese", "philadelphia", "lurpak", "anchor",
-    "flora", "clover", "bertolli", "cravendale", "semi skimmed", "skimmed",
-    "whole milk", "oat milk", "almond milk", "soya milk", "coconut milk",
-    "single cream", "double cream", "whipping cream", "sour cream", "creme fraiche",
-    "muller", "activia", "danone", "yakult", "actimel", "petit filous"
-  ],
+  { slug: "rtd-coffee-tea", keywords: ["iced coffee", "cold brew", "starbucks", "costa coffee"] },
+  { slug: "meal-replacements", keywords: ["meal replacement", "huel", "soylent"] },
+  { slug: "protein-shakes", keywords: ["protein shake", "protein drink", "whey drink"] },
+
+  // ===== BAKERY SUBCATEGORIES =====
+  { slug: "bread", keywords: ["bread", "loaf", "wholemeal bread", "white bread", "brown bread", "sourdough", "seeded bread", "rye bread", "warburtons", "hovis", "kingsmill"] },
+  { slug: "rolls-bagels", keywords: ["roll", "bap", "bun", "bagel", "brioche bun"] },
+  { slug: "baguettes", keywords: ["baguette", "french stick"] },
+  { slug: "wraps-flatbread", keywords: ["wrap", "tortilla wrap", "flatbread", "focaccia"] },
+  { slug: "pitta", keywords: ["pitta", "pita"] },
+  { slug: "naan", keywords: ["naan", "naan bread", "garlic naan", "peshwari"] },
+  { slug: "breakfast", keywords: ["crumpet", "muffin", "english muffin", "pancake", "waffle", "croissant", "pain au chocolat"] },
+  { slug: "brioche", keywords: ["brioche"] },
+  { slug: "bakery", keywords: ["pastry", "scone", "donut", "doughnut", "cake"] },
+
+  // ===== SNACKING SUBCATEGORIES =====
+  { slug: "chocolate", keywords: ["chocolate", "cadbury", "dairy milk", "galaxy", "mars", "snickers", "twix", "kit kat", "kitkat", "bounty", "milky way", "maltesers", "m&ms", "smarties", "aero", "wispa", "crunchie", "double decker", "boost", "picnic", "turkish delight", "ferrero", "rocher", "lindt", "toblerone", "kinder", "milka"] },
+  { slug: "confectionery", keywords: ["sweets", "candy", "haribo", "starburst", "skittles", "fruit pastilles", "wine gums", "jelly babies", "liquorice", "fudge", "toffee", "caramel", "lollipop", "fruit gums", "trebor", "polo", "mints"] },
+  { slug: "chewing-gum", keywords: ["chewing gum", "gum", "extra gum", "airwaves", "wrigley", "hubba bubba", "tic tac", "mentos"] },
+  { slug: "chocolate-confectionery", keywords: ["nutella"] },
   
-  // Bakery
-  "bakery": [
-    "bread", "loaf", "rolls", "baguette", "croissant", "pastry", "cake",
-    "muffin", "cupcake", "donut", "doughnut", "scone", "crumpet", "bagel",
-    "wrap", "tortilla", "pitta", "naan", "chapati", "flatbread", "focaccia",
-    "sourdough", "wholemeal", "white bread", "brown bread", "seeded",
-    "biscuits", "cookies", "digestive", "hobnob", "rich tea", "bourbon",
-    "custard cream", "oreo", "mcvities", "jaffa cakes", "shortbread",
-    "wafer", "biscotti", "brownie", "flapjack", "cereal bar"
-  ],
+  { slug: "crisps", keywords: ["crisps", "chips", "walkers", "lays", "kettle chips", "sensations", "mccoys", "monster munch", "wotsits", "quavers", "skips", "hula hoops", "french fries", "nik naks", "twiglets", "mini cheddars", "pringles", "popchips", "tyrrell"] },
+  { slug: "tortillas", keywords: ["doritos", "tortilla chips", "nachos", "corn chips"] },
+  { slug: "pretzel", keywords: ["pretzel", "pretzels"] },
+  { slug: "veg-asian", keywords: ["prawn crackers", "pappadum", "papadum", "seaweed snack"] },
+  { slug: "crisps-savoury", keywords: ["savoury snack"] },
   
-  // Fruit, Veg & Salad
-  "fruit-veg-salad-pulses": [
-    "apple", "banana", "orange", "grape", "strawberry", "raspberry", "blueberry",
-    "mango", "pineapple", "melon", "watermelon", "kiwi", "pear", "peach",
-    "plum", "cherry", "lemon", "lime", "grapefruit", "avocado", "coconut",
-    "carrot", "potato", "tomato", "onion", "garlic", "pepper", "cucumber",
-    "lettuce", "spinach", "broccoli", "cauliflower", "cabbage", "celery",
-    "mushroom", "courgette", "aubergine", "sweetcorn", "peas", "beans",
-    "lentils", "chickpeas", "kidney beans", "baked beans", "salad", "coleslaw",
-    "hummus", "guacamole", "dried fruit", "raisins", "sultanas", "dates", "figs"
-  ],
+  { slug: "popcorn", keywords: ["popcorn", "butterkist", "propercorn", "metcalfe"] },
+  { slug: "protein-snacking-bars", keywords: ["protein bar", "energy bar", "cereal bar", "flapjack", "nakd", "trek", "grenade", "kind bar", "clif bar"] },
+  { slug: "rice-corn-cakes", keywords: ["rice cake", "corn cake", "rice cracker"] },
+  { slug: "dried-fruit", keywords: ["dried fruit", "raisins", "sultanas", "dates", "figs", "apricots dried", "cranberries dried", "mango dried"] },
+  { slug: "nuts-pulses", keywords: ["nuts", "peanuts", "cashews", "almonds", "pistachios", "mixed nuts", "walnuts", "hazelnuts", "macadamia", "brazil nuts", "nut mix"] },
+  { slug: "meat-snacks", keywords: ["jerky", "beef jerky", "biltong", "pepperami", "peperami", "meat stick"] },
+
+  // ===== FOOD CUPBOARD SUBCATEGORIES =====
+  { slug: "olive-oil", keywords: ["olive oil", "extra virgin olive"] },
+  { slug: "sunflower-oil", keywords: ["sunflower oil"] },
+  { slug: "rapeseed-oil", keywords: ["rapeseed oil"] },
+  { slug: "virgin-coconut-oil", keywords: ["coconut oil"] },
+  { slug: "toasted-sesame-oil", keywords: ["sesame oil"] },
+  { slug: "balsamic-vinegar", keywords: ["balsamic vinegar", "balsamic"] },
+  { slug: "wine-vinegar", keywords: ["wine vinegar", "red wine vinegar", "white wine vinegar"] },
+  { slug: "cyder-vinegar", keywords: ["cider vinegar", "apple cider vinegar"] },
+  { slug: "rice-vinegar", keywords: ["rice vinegar"] },
+  { slug: "oils-vinegar", keywords: ["oil", "vinegar", "vegetable oil", "cooking oil"] },
+
+  { slug: "rice-pulses", keywords: ["rice", "basmati", "jasmine rice", "long grain", "risotto rice", "arborio", "wild rice", "lentils", "chickpeas", "kidney beans", "black beans", "cannellini", "borlotti", "pulses"] },
+  { slug: "noodles", keywords: ["noodle", "ramen", "udon", "soba", "rice noodle", "egg noodle", "instant noodle", "pot noodle", "super noodles"] },
+  { slug: "pasta", keywords: ["pasta", "spaghetti", "penne", "fusilli", "macaroni", "tagliatelle", "linguine", "farfalle", "rigatoni", "lasagne", "orzo", "gnocchi"] },
   
-  // Sauces & Condiments
-  "table-sauces-condiments": [
-    "ketchup", "mayonnaise", "mayo", "mustard", "relish", "pickle", "chutney",
-    "brown sauce", "hp sauce", "worcestershire", "soy sauce", "vinegar",
-    "salad cream", "dressing", "bbq sauce", "hot sauce", "tabasco", "sriracha",
-    "heinz", "hellmanns", "hellmann's", "french's", "colmans", "branston"
-  ],
+  { slug: "oriental", keywords: ["soy sauce", "teriyaki", "hoisin", "oyster sauce", "fish sauce", "sriracha", "sweet chilli", "thai", "chinese sauce", "stir fry sauce", "black bean sauce", "plum sauce"] },
+  { slug: "pasta-passata-pesto", keywords: ["passata", "pesto", "tomato puree", "chopped tomatoes", "pasta sauce", "bolognese", "arrabbiata", "napoli", "dolmio", "loyd grossman"] },
+  { slug: "mexican", keywords: ["salsa", "taco", "fajita", "enchilada", "burrito", "mexican", "old el paso", "chipotle"] },
+  { slug: "tahini", keywords: ["tahini"] },
+  { slug: "harissa", keywords: ["harissa"] },
+  { slug: "south-asia-africa", keywords: ["curry paste", "tikka", "korma", "madras", "jalfrezi", "balti", "rogan josh", "pataks", "sharwoods", "massaman", "rendang", "tandoori"] },
+  { slug: "sauces-pastes", keywords: ["sauce", "paste", "cooking sauce", "simmer sauce"] },
   
-  // Cooking Sauces & Pastes
-  "sauces-pastes": [
-    "pasta sauce", "curry sauce", "stir fry sauce", "cooking sauce",
-    "pesto", "tomato puree", "passata", "chopped tomatoes", "dolmio",
-    "ragu", "loyd grossman", "uncle bens", "pataks", "sharwoods",
-    "tikka masala", "korma", "madras", "jalfrezi", "balti", "thai curry",
-    "oyster sauce", "fish sauce", "hoisin", "teriyaki", "sweet chilli"
-  ],
+  { slug: "honey", keywords: ["honey", "manuka", "acacia honey", "runny honey", "set honey"] },
+  { slug: "syrup", keywords: ["syrup", "golden syrup", "maple syrup", "agave", "treacle", "date syrup"] },
   
-  // Baby & Child
-  "baby-child": [
-    "baby", "infant", "toddler", "nappy", "nappies", "diaper", "pampers",
-    "huggies", "pull ups", "baby wipes", "sudocrem", "baby food", "formula",
-    "aptamil", "cow & gate", "sma", "hipp", "ella's kitchen", "organix",
-    "baby milk", "follow on", "growing up milk", "rusks", "baby rice",
-    "baby cereal", "baby snacks", "baby juice", "gripe water", "calpol",
-    "baby powder", "baby oil", "baby lotion", "baby shampoo", "baby bath"
-  ],
+  { slug: "ketchup", keywords: ["ketchup", "tomato ketchup", "heinz ketchup"] },
+  { slug: "mayo", keywords: ["mayonnaise", "mayo", "hellmanns", "hellmann's"] },
+  { slug: "mustard", keywords: ["mustard", "colmans", "dijon", "english mustard", "wholegrain mustard"] },
+  { slug: "table-sauces-condiments", keywords: ["brown sauce", "hp sauce", "worcestershire", "salad cream", "dressing", "bbq sauce", "hot sauce", "tabasco", "relish", "pickle", "chutney", "branston", "piccalilli"] },
   
-  // Health, Hygiene & Pets
-  "hygiene-health-pets": [
-    "soap", "shampoo", "conditioner", "shower gel", "body wash", "bath",
-    "toothpaste", "toothbrush", "mouthwash", "dental", "floss", "colgate",
-    "oral b", "sensodyne", "aquafresh", "listerine",
-    "deodorant", "antiperspirant", "roll on", "spray", "sure", "dove", "lynx",
-    "razor", "shaving", "gillette", "wilkinson",
-    "toilet paper", "toilet roll", "tissues", "kitchen roll", "andrex", "cushelle",
-    "detergent", "washing powder", "fabric softener", "laundry", "persil", "ariel",
-    "bold", "comfort", "lenor", "fairy", "washing up liquid",
-    "bleach", "disinfectant", "cleaner", "dettol", "flash", "mr muscle",
-    "air freshener", "febreze", "glade", "plug in",
-    "pet food", "dog food", "cat food", "pedigree", "whiskas", "felix",
-    "iams", "purina", "cesar", "dreamies", "cat litter", "pet treats",
-    "vitamins", "supplements", "paracetamol", "ibuprofen", "plasters", "bandage",
-    "medicine", "cold", "flu", "cough", "throat", "pain relief", "antihistamine"
-  ],
+  { slug: "biscuits-cakes", keywords: ["biscuit", "cookie", "digestive", "hobnob", "rich tea", "bourbon", "custard cream", "oreo", "mcvities", "jaffa", "shortbread", "wafer", "brownie", "cake mix"] },
+  { slug: "breakfast-cereals", keywords: ["cereal", "porridge", "oats", "muesli", "granola", "weetabix", "cornflakes", "shreddies", "cheerios", "coco pops", "frosties", "special k", "bran flakes", "all bran", "ready brek", "shredded wheat"] },
+  { slug: "crackers-crispbreads", keywords: ["cracker", "crispbread", "ryvita", "cream cracker", "water biscuit", "oatcake", "rice cracker", "breadstick"] },
+  { slug: "jam-spreads", keywords: ["jam", "marmalade", "peanut butter", "marmite", "spread", "nutella", "biscoff", "chocolate spread", "lemon curd"] },
   
-  // Food Cupboard (general/fallback items that are clearly food)
-  "food-cupboard": [
-    "rice", "pasta", "noodles", "spaghetti", "penne", "fusilli", "macaroni",
-    "cereal", "porridge", "oats", "muesli", "granola", "weetabix", "cornflakes",
-    "shreddies", "cheerios", "coco pops", "frosties", "special k", "bran flakes",
-    "soup", "heinz soup", "cup a soup", "instant noodles", "pot noodle",
-    "canned", "tinned", "tuna", "salmon", "sardines", "mackerel", "spam",
-    "corned beef", "ham", "chicken", "beef", "pork", "lamb", "turkey",
-    "sausage", "bacon", "hot dog", "burger", "meatballs",
-    "flour", "sugar", "salt", "pepper", "spices", "herbs", "stock", "gravy",
-    "oil", "olive oil", "vegetable oil", "sunflower oil", "coconut oil",
-    "honey", "jam", "marmalade", "peanut butter", "marmite", "spread",
-    "syrup", "golden syrup", "treacle", "maple syrup",
-    "custard", "jelly", "blancmange", "angel delight",
-    "baking", "yeast", "baking powder", "bicarbonate", "vanilla", "food colouring",
-    "icing", "marzipan", "sprinkles", "cake mix", "brownie mix",
-    "frozen", "ice cream", "fish fingers", "chicken nuggets", "pizza", "chips",
-    "ready meal", "microwave", "frozen veg", "frozen fruit"
-  ]
-};
+  { slug: "coffee", keywords: ["coffee", "nescafe", "kenco", "lavazza", "espresso", "ground coffee", "coffee beans", "instant coffee", "douwe egberts", "illy", "carte noire", "starbucks coffee"] },
+  { slug: "black-tea", keywords: ["tea", "tea bags", "tetley", "pg tips", "twinings", "yorkshire tea", "english breakfast", "earl grey", "breakfast tea"] },
+  { slug: "green-tea", keywords: ["green tea", "matcha", "sencha"] },
+  { slug: "herbal-tea", keywords: ["herbal tea", "chamomile", "peppermint tea", "fruit tea", "rooibos", "ginger tea", "lemon tea"] },
+  { slug: "hot-chocolate", keywords: ["hot chocolate", "cocoa", "drinking chocolate", "horlicks", "ovaltine", "milo", "options hot chocolate"] },
+  { slug: "coffee-tea-hot-drinks", keywords: ["coffee mate", "creamer", "decaf"] },
+
+  { slug: "soup", keywords: ["soup", "heinz soup", "cup a soup", "batchelors"] },
+  { slug: "canned", keywords: ["canned", "tinned", "tuna", "salmon", "sardines", "mackerel", "spam", "corned beef", "baked beans", "beans"] },
+
+  // ===== BABY & CHILD =====
+  { slug: "baby-child", keywords: ["baby", "infant", "toddler", "nappy", "nappies", "diaper", "pampers", "huggies", "pull ups", "baby wipes", "sudocrem", "baby food", "formula", "aptamil", "cow & gate", "sma", "hipp", "ella's kitchen", "organix", "baby milk", "follow on", "growing up milk", "rusks", "baby rice", "baby cereal", "baby snacks", "baby juice", "gripe water", "calpol", "baby powder", "baby oil", "baby lotion", "baby shampoo", "baby bath"] },
+
+  // ===== HYGIENE, HEALTH & PETS =====
+  { slug: "hygiene-health-pets", keywords: ["soap", "shampoo", "conditioner", "shower gel", "body wash", "bath", "toothpaste", "toothbrush", "mouthwash", "dental", "floss", "colgate", "oral b", "sensodyne", "aquafresh", "listerine", "deodorant", "antiperspirant", "roll on", "sure", "dove", "lynx", "razor", "shaving", "gillette", "wilkinson", "toilet paper", "toilet roll", "tissues", "kitchen roll", "andrex", "cushelle", "detergent", "washing powder", "fabric softener", "laundry", "persil", "ariel", "bold", "comfort", "lenor", "fairy", "washing up liquid", "bleach", "disinfectant", "cleaner", "dettol", "flash", "mr muscle", "air freshener", "febreze", "glade", "pet food", "dog food", "cat food", "pedigree", "whiskas", "felix", "iams", "purina", "cesar", "dreamies", "cat litter", "pet treats", "vitamins", "supplements", "paracetamol", "ibuprofen", "plasters", "bandage", "medicine", "cold", "flu", "cough", "throat", "pain relief", "antihistamine"] },
+
+  // ===== MEAT & FISH =====
+  { slug: "sliced-bacon", keywords: ["bacon rashers", "streaky bacon", "back bacon", "smoked bacon", "unsmoked bacon"] },
+  { slug: "diced-bacon", keywords: ["bacon lardons", "diced bacon", "bacon pieces"] },
+  { slug: "bacon-pancetta", keywords: ["bacon", "pancetta"] },
+  { slug: "fresh-sausages", keywords: ["pork sausage", "cumberland sausage", "lincolnshire", "breakfast sausage", "chipolata"] },
+  { slug: "cured-smoked", keywords: ["frankfurter", "hot dog", "bratwurst", "chorizo", "smoked sausage", "kabanos"] },
+  { slug: "sausages-frankfurters", keywords: ["sausage", "banger"] },
+  { slug: "cooked-cured", keywords: ["ham", "cooked ham", "gammon", "turkey breast", "chicken breast", "sliced meat", "pastrami"] },
+  { slug: "fish", keywords: ["fish", "salmon", "cod", "haddock", "prawns", "shrimp", "mackerel", "trout", "sea bass", "tuna steak", "fish fillet"] },
+  { slug: "halal", keywords: ["halal"] },
+  { slug: "italian-meat", keywords: ["prosciutto", "salami", "mortadella", "bresaola", "parma ham"] },
+  { slug: "spanish-meat", keywords: ["serrano", "jamon", "iberico"] },
+  { slug: "polish-meat", keywords: ["kielbasa", "krakowska", "polish sausage"] },
+  { slug: "greek-meat", keywords: ["gyros", "souvlaki"] },
+  { slug: "meat-fish", keywords: ["meat", "beef", "pork", "lamb", "chicken", "turkey", "duck", "mince", "steak"] },
+
+  // ===== FRESH & CHILLED =====
+  { slug: "meat-alts-tofu", keywords: ["tofu", "tempeh", "seitan", "quorn", "vegan meat", "plant based", "beyond meat", "impossible", "linda mccartney"] },
+  { slug: "desserts", keywords: ["dessert", "mousse", "cheesecake", "tiramisu", "panna cotta", "trifle", "custard pot", "rice pudding"] },
+  { slug: "salads-olives", keywords: ["salad", "coleslaw", "olives", "antipasti", "mixed salad", "potato salad"] },
+  { slug: "fresh-pasta", keywords: ["fresh pasta", "fresh ravioli", "fresh tortellini", "stuffed pasta"] },
+  { slug: "fresh-sauces", keywords: ["fresh pesto", "fresh sauce"] },
+  { slug: "broth", keywords: ["broth", "bone broth", "stock pot"] },
+  { slug: "soup-broth", keywords: ["fresh soup", "chilled soup"] },
+  { slug: "dumplings-noodles", keywords: ["dumpling", "gyoza", "dim sum", "spring roll", "samosa", "wonton"] },
+  { slug: "ready-meals", keywords: ["ready meal", "meal kit", "lasagne ready", "curry ready", "pie ready"] },
+
+  // ===== FRUIT & VEG =====
+  { slug: "fruit-veg-salad-pulses", keywords: ["apple", "banana", "orange", "grape", "strawberry", "raspberry", "blueberry", "mango", "pineapple", "melon", "watermelon", "kiwi", "pear", "peach", "plum", "cherry", "lemon", "lime", "grapefruit", "avocado", "coconut", "carrot", "potato", "tomato", "onion", "garlic", "pepper", "cucumber", "lettuce", "spinach", "broccoli", "cauliflower", "cabbage", "celery", "mushroom", "courgette", "aubergine", "sweetcorn", "peas", "beans", "vegetable", "fruit", "fresh produce"] },
+
+  // ===== FALLBACK =====
+  { slug: "food-cupboard", keywords: ["food", "grocery", "frozen", "ice cream", "fish fingers", "chicken nuggets", "pizza", "chips", "ready meal", "microwave", "frozen veg", "frozen fruit", "flour", "sugar", "salt", "pepper", "spices", "herbs", "stock", "gravy", "baking", "yeast", "baking powder", "bicarbonate", "vanilla", "food colouring", "icing", "marzipan", "sprinkles"] },
+];
 
 // Get category for a product based on its name
 export const categorizeProduct = (productName: string): string => {
   const nameLower = productName.toLowerCase();
   
-  // Check each category's keywords
-  for (const [categorySlug, keywords] of Object.entries(categoryKeywords)) {
+  // Check each category's keywords (order matters - more specific first)
+  for (const { slug, keywords } of categoryKeywords) {
     for (const keyword of keywords) {
       if (nameLower.includes(keyword.toLowerCase())) {
-        return categorySlug;
+        return slug;
       }
     }
   }
@@ -174,31 +207,5 @@ export const categorizeProduct = (productName: string): string => {
 // Check if a product belongs to a specific category (including parent categories)
 export const productBelongsToCategory = (productName: string, categorySlug: string): boolean => {
   const productCategory = categorizeProduct(productName);
-  
-  // Direct match
-  if (productCategory === categorySlug) {
-    return true;
-  }
-  
-  // Parent category mappings
-  const parentMappings: Record<string, string[]> = {
-    "snacking": ["crisps-savoury", "chocolate-confectionery"],
-    "drinks": ["soft-drinks-better", "coffee-tea-hot-drinks"],
-    "food-cupboard": ["sauces-pastes", "table-sauces-condiments"],
-  };
-  
-  // Check if product's category is a child of the requested category
-  if (parentMappings[categorySlug]?.includes(productCategory)) {
-    return true;
-  }
-  
-  return false;
-};
-
-// Get all products that belong to a category
-export const filterProductsByCategory = <T extends { name: string }>(
-  products: T[],
-  categorySlug: string
-): T[] => {
-  return products.filter(product => productBelongsToCategory(product.name, categorySlug));
+  return productCategory === categorySlug;
 };
