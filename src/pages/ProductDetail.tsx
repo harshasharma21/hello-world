@@ -1,57 +1,48 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, ShoppingCart, Heart, Plus, Minus, Package, Truck, Shield } from "lucide-react";
+import { Heart, ShoppingCart, ChevronRight } from "lucide-react";
+import { useProduct, useProducts } from "@/hooks/useProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import { useProduct, useProducts, DbProduct } from "@/hooks/useProducts";
-import { useProductImage } from "@/hooks/useProductImage";
 import { categories } from "@/data/mockData";
 import {
   getCategorySlugFromGroupCode,
-  getCategoryBySlug,
-  getCategoryById,
   buildCategoryPath,
-  buildProductPath,
+  getCategoryBySlug,
+  getAllDescendantSlugs,
 } from "@/utils/categoryMapping";
 
 // Related product card with API-fetched image
-const RelatedProductCard = ({ product }: { product: DbProduct }) => {
+const RelatedProductCard = ({ product }: { product: any }) => {
   const { imageUrl, isLoading } = useProductImage(product.barcode);
   const categorySlug = getCategorySlugFromGroupCode(product.group_code);
-  const productPath = buildProductPath(product.id, categorySlug);
+  const productPath = buildCategoryPath(categorySlug) + `/product/${product.id}`;
 
   return (
     <Link to={productPath} className="group">
-      <div className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
-        <div className="aspect-square bg-muted relative overflow-hidden">
-          {isLoading ? (
-            <Skeleton className="w-full h-full" />
-          ) : (
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder.svg";
-              }}
-            />
-          )}
-        </div>
-        <div className="p-4">
-          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
-            {product.name}
-          </h3>
-          <p className="text-lg font-bold text-primary mt-2">
-            £{(product.price || 0).toFixed(2)}
-          </p>
-        </div>
+      <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-2">
+        {isLoading ? (
+          <Skeleton className="w-full h-full" />
+        ) : (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }}
+          />
+        )}
       </div>
+      <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary">
+        {product.name}
+      </h3>
+      <p className="text-primary font-bold mt-1">£{(product.price || 0).toFixed(2)}</p>
     </Link>
   );
 };
@@ -61,7 +52,7 @@ interface ProductDetailProps {
 }
 
 const ProductDetail = ({ productId }: ProductDetailProps) => {
-  const { id: paramId } = useParams();
+  const { id: paramId, "*": fullPath } = useParams();
   const id = productId || paramId;
   const navigate = useNavigate();
   const { addItem } = useCart();
@@ -78,47 +69,87 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
   // Filter out current product from related
   const filteredRelated = relatedProducts.filter((p) => p.id !== id).slice(0, 4);
 
-  // Build category breadcrumb chain
-  const buildBreadcrumbChain = () => {
-    if (!product?.group_code) return [];
+  // Build breadcrumb from URL path
+  const getBreadcrumbs = () => {
+    const breadcrumbs = [
+      { name: "Home", path: "/" },
+      { name: "Shop", path: "/shop" },
+    ];
 
-    const categorySlug = getCategorySlugFromGroupCode(product.group_code);
-    if (!categorySlug) return [];
+    // Extract category path from URL
+    // URL format: /shop/category1/category2/product/id
+    const pathParts = fullPath?.split("/").filter(Boolean) || [];
 
-    const category = getCategoryBySlug(categorySlug);
-    if (!category) return [];
+    if (pathParts.length > 0) {
+      const productIndex = pathParts.indexOf("product");
 
-    const chain: typeof categories = [];
-    let current = category;
+      // Get all parts before "product"
+      const categoryParts =
+        productIndex !== -1 ? pathParts.slice(0, productIndex) : pathParts;
 
-    while (current) {
-      chain.unshift(current);
-      if (current.parentId) {
-        current = getCategoryById(current.parentId);
-      } else {
-        break;
-      }
+      // Build breadcrumb for each category level
+      let currentPath = "/shop";
+      categoryParts.forEach((part) => {
+        currentPath += `/${part}`;
+
+        // Find the category name from slug
+        const category = categories.find((c) => c.slug === part);
+        const categoryName = category?.name || part.replace(/-/g, " ").toUpperCase();
+
+        breadcrumbs.push({
+          name: categoryName,
+          path: currentPath,
+        });
+      });
     }
 
-    return chain;
+    // Add product name at the end
+    if (product) {
+      breadcrumbs.push({
+        name: product.name,
+        path: "",
+      });
+    }
+
+    return breadcrumbs;
   };
 
-  const breadcrumbChain = buildBreadcrumbChain();
-  const categorySlug = product ? getCategorySlugFromGroupCode(product.group_code) : null;
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    const cartProduct = {
+      id: product.id,
+      sku: product.barcode,
+      name: product.name,
+      description: product.group_code || "",
+      price: product.price || 0,
+      images: [productImage],
+      category: product.group_code || "",
+      stock: 100,
+      inStock: true,
+    };
+
+    addItem(cartProduct as any, quantity);
+    toast.success(`Added ${quantity} x ${product.name} to cart`);
+  };
+
+  const handleToggleLike = () => {
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Skeleton className="aspect-square rounded-lg" />
             <div className="space-y-4">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-12 w-1/3" />
+              <Skeleton className="h-32 w-full" />
             </div>
           </div>
         </main>
@@ -131,36 +162,16 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-6">The product you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate("/shop")}>Browse All Products</Button>
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+            <Button onClick={() => navigate("/shop")}>Back to Shop</Button>
+          </div>
         </main>
         <Footer />
       </div>
     );
   }
-
-  const handleAddToCart = () => {
-    const cartProduct = {
-      id: product.id,
-      sku: product.barcode,
-      name: product.name,
-      description: product.group_code || "",
-      price: product.price || 0,
-      images: [productImage],
-      category: product.group_code || "",
-      stock: 100,
-      inStock: true,
-    };
-    addItem(cartProduct as any, quantity);
-    toast.success(`Added ${quantity}x ${product.name} to cart`);
-  };
-
-  const handleToggleLike = () => {
-    setIsLiked(!isLiked);
-    toast.success(isLiked ? "Removed from wishlist" : "Added to wishlist");
-  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -171,175 +182,126 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
         <div className="bg-muted/50 border-b border-border">
           <div className="container mx-auto px-4 py-3">
             <nav className="flex items-center gap-2 text-sm flex-wrap">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                Home
-              </Link>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-colors">
-                Shop
-              </Link>
-              {breadcrumbChain.map((cat) => (
-                <span key={cat.id} className="flex items-center gap-2">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <Link
-                    to={buildCategoryPath(cat.slug)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {cat.name}
-                  </Link>
-                </span>
+              {getBreadcrumbs().map((crumb, index) => (
+                <div key={crumb.path || crumb.name} className="flex items-center gap-2">
+                  {crumb.path ? (
+                    <Link
+                      to={crumb.path}
+                      className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                    >
+                      {crumb.name}
+                    </Link>
+                  ) : (
+                    <span className="text-foreground font-medium">{crumb.name}</span>
+                  )}
+                  {index < getBreadcrumbs().length - 1 && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               ))}
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground line-clamp-1">{product.name}</span>
             </nav>
           </div>
         </div>
 
-        {/* Product Details */}
-        <section className="container mx-auto px-4 py-8 md:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
-            {/* Image Section */}
-            <div className="space-y-4">
-              <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-                {imageLoading ? (
-                  <Skeleton className="w-full h-full" />
-                ) : (
-                  <img
-                    src={productImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                  />
-                )}
-              </div>
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-16">
+            {/* Product Image */}
+            <div className="flex items-center justify-center bg-muted rounded-lg overflow-hidden">
+              {imageLoading ? (
+                <Skeleton className="w-full h-full aspect-square" />
+              ) : (
+                <img
+                  src={productImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
+              )}
             </div>
 
-            {/* Product Info */}
+            {/* Product Details */}
             <div className="space-y-6">
               <div>
-                <p className="text-sm text-muted-foreground font-mono mb-2">
-                  Barcode: {product.barcode}
-                </p>
-                {product.group_code && categorySlug && (
-                  <Link to={buildCategoryPath(categorySlug)}>
-                    <Badge variant="secondary" className="mb-3 cursor-pointer hover:bg-secondary/80">
-                      {product.group_code}
-                    </Badge>
-                  </Link>
-                )}
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
-                {product.base_unit && (
-                  <p className="text-muted-foreground">Unit: {product.base_unit}</p>
-                )}
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name}</h1>
+                <p className="text-muted-foreground">{product.barcode}</p>
               </div>
 
-              <div className="flex items-baseline gap-4">
-                <p className="text-4xl font-bold text-primary">
+              <div className="flex items-center gap-4">
+                <span className="text-4xl font-bold text-primary">
                   £{(product.price || 0).toFixed(2)}
-                </p>
+                </span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                  In Stock
+                </span>
               </div>
 
-              <Separator />
+              <p className="text-muted-foreground text-lg">
+                {product.group_code}
+              </p>
 
-              {/* Quantity & Actions */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center border border-border rounded-lg">
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div>
+                  <label className="text-sm font-medium block mb-2">Quantity</label>
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-12 rounded-none"
+                      variant="outline"
+                      size="sm"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     >
-                      <Minus className="h-5 w-5" />
+                      −
                     </Button>
                     <input
                       type="number"
+                      min="1"
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-16 text-center border-0 outline-none text-lg bg-transparent"
+                      className="w-16 text-center border border-border rounded px-2 py-1"
                     />
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-12 rounded-none"
+                      variant="outline"
+                      size="sm"
                       onClick={() => setQuantity(quantity + 1)}
                     >
-                      <Plus className="h-5 w-5" />
+                      +
                     </Button>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button size="lg" className="flex-1 h-12 text-base" onClick={handleAddToCart}>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    className="flex-1"
+                    size="lg"
+                    onClick={handleAddToCart}
+                  >
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add to Cart
                   </Button>
                   <Button
+                    variant={isLiked ? "default" : "outline"}
                     size="lg"
-                    variant="outline"
-                    className={`h-12 w-12 ${isLiked ? "text-destructive" : ""}`}
                     onClick={handleToggleLike}
                   >
                     <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
                   </Button>
                 </div>
               </div>
-
-              <Separator />
-
-              {/* Features */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm mb-1">Bulk Orders</h4>
-                    <p className="text-xs text-muted-foreground">Special pricing available</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Truck className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm mb-1">Fast Delivery</h4>
-                    <p className="text-xs text-muted-foreground">Next-day available</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm mb-1">Quality Assured</h4>
-                    <p className="text-xs text-muted-foreground">Certified suppliers</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Related Products */}
-          {filteredRelated.length > 0 && categorySlug && (
-            <section className="mt-16">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold">Related Products</h2>
-                <Button variant="outline" asChild>
-                  <Link to={buildCategoryPath(categorySlug)}>View All</Link>
-                </Button>
-              </div>
+          {filteredRelated.length > 0 && (
+            <div className="border-t border-border pt-12">
+              <h2 className="text-2xl font-bold mb-8">Related Products</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredRelated.map((relatedProduct) => (
-                  <RelatedProductCard key={relatedProduct.id} product={relatedProduct} />
+                {filteredRelated.map((product) => (
+                  <RelatedProductCard key={product.id} product={product} />
                 ))}
               </div>
-            </section>
+            </div>
           )}
-        </section>
+        </div>
       </main>
 
       <Footer />

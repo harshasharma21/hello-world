@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, Link, useNavigate, useParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown } from "lucide-react";
 import { useProducts, DbProduct } from "@/hooks/useProducts";
 import { useProductImage } from "@/hooks/useProductImage";
@@ -15,26 +23,30 @@ import { toast } from "sonner";
 import { categories } from "@/data/mockData";
 import { 
   getCategorySlugFromGroupCode, 
-  buildCategoryPath, 
-  buildProductPath,
+  buildCategoryPath,
   getSubcategories,
-  getRootCategories 
+  getRootCategories,
+  getCategoryBySlug,
+  getAllDescendantSlugs,
+  getCategoryById,
 } from "@/utils/categoryMapping";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { buildProductPath } from "@/utils/productRoutes";
+import { categorizeProduct } from "@/utils/productCategorizer";
 
 // Product Card component with API-fetched image
 const ShopProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
   const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
   const categorySlug = getCategorySlugFromGroupCode(product.group_code);
-  const productPath = buildProductPath(product.id, categorySlug);
+  
+  const productPath = buildProductPath({
+    id: product.id,
+    category: categorySlug,
+    subcategory: product.group_code,
+    name: product.name,
+    price: product.price,
+    barcode: product.barcode,
+  } as any);
 
   const handleAddToCart = () => {
     const cartProduct = {
@@ -99,8 +111,10 @@ const ShopProductCard = ({ product }: { product: DbProduct }) => {
 };
 
 const Shop = () => {
+  const { "*": fullPath } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = window.location.pathname;
 
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "name");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -110,10 +124,35 @@ const Shop = () => {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const itemsPerPage = 32;
 
+  // Parse category from URL path
+  const pathParts = fullPath?.split("/").filter(Boolean) || [];
+  let selectedCategory = null;
+  
+  if (pathParts.length > 0 && pathParts[0] !== "product") {
+    const lastPart = pathParts[pathParts.length - 1];
+    selectedCategory = getCategoryBySlug(lastPart);
+  }
+
   // Fetch all products from Supabase
   const { data: products = [], isLoading: productsLoading } = useProducts({
     search: searchQuery || undefined,
   });
+
+  // Filter products by category if selected
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategory) {
+      return products;
+    }
+
+    // Get all descendant slugs for this category
+    const descendantSlugs = getAllDescendantSlugs(selectedCategory.id);
+    
+    // Filter products that match this category or any of its descendants
+    return products.filter((p) => {
+      const productCategorySlug = categorizeProduct(p.name);
+      return descendantSlugs.includes(productCategorySlug);
+    });
+  }, [products, selectedCategory]);
 
   // Update URL params
   const updateParams = (updates: Record<string, string | null>) => {
@@ -142,7 +181,7 @@ const Shop = () => {
 
   // Sort products
   const sortedProducts = useMemo(() => {
-    return [...products].sort((a, b) => {
+    return [...filteredProducts].sort((a, b) => {
       switch (sortBy) {
         case "price-low":
           return (a.price || 0) - (b.price || 0);
@@ -154,7 +193,7 @@ const Shop = () => {
           return 0;
       }
     });
-  }, [products, sortBy]);
+  }, [filteredProducts, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
@@ -169,14 +208,50 @@ const Shop = () => {
 
   const rootCategories = getRootCategories();
 
+  // Build breadcrumb path from URL
+  const getBreadcrumbs = () => {
+    const breadcrumbs = [{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }];
+    
+    // Extract category path from URL
+    const pathParts = location.split('/').filter(Boolean);
+    
+    if (pathParts.length > 1 && pathParts[0] === 'shop') {
+      const categoryParts = pathParts.slice(1);
+      
+      // Build breadcrumb for each category level
+      let currentPath = '/shop';
+      categoryParts.forEach((part) => {
+        currentPath += `/${part}`;
+        
+        // Find the category name from slug
+        const category = categories.find(c => c.slug === part);
+        const categoryName = category?.name || part.replace(/-/g, ' ').toUpperCase();
+        
+        breadcrumbs.push({
+          name: categoryName,
+          path: currentPath
+        });
+      });
+    }
+    
+    return breadcrumbs;
+  };
+
   const FilterContent = () => (
     <>
       <div className="mb-6">
         <h2 className="font-semibold text-lg mb-4">Categories</h2>
         <div className="space-y-1">
           {/* All Products */}
-          <div className="flex items-center py-2 px-3 rounded bg-primary/10 text-primary font-medium">
-            <div className="w-2 h-2 rounded-full mr-3 bg-primary" />
+          <div 
+            className={`flex items-center py-2 px-3 rounded cursor-pointer transition-colors ${
+              !selectedCategory 
+                ? "bg-primary/10 text-primary font-medium" 
+                : "hover:bg-muted"
+            }`}
+            onClick={() => navigate("/shop")}
+          >
+            <div className={`w-2 h-2 rounded-full mr-3 ${!selectedCategory ? "bg-primary" : "bg-muted-foreground/30"}`} />
             <span className="text-sm">All Products</span>
             <span className="ml-auto text-xs text-muted-foreground">{products.length}</span>
           </div>
@@ -185,20 +260,24 @@ const Shop = () => {
           {rootCategories.map((cat) => {
             const level2Categories = getSubcategories(cat.id);
             const hasSubcategories = level2Categories.length > 0;
+            const isSelected = selectedCategory?.id === cat.id;
+            const descendantSlugs = getAllDescendantSlugs(cat.id);
+            const isChildSelected = selectedCategory && descendantSlugs.includes(selectedCategory.slug);
 
             return (
               <div key={cat.id} className="space-y-0.5">
                 <div
-                  className="flex items-center py-2 px-3 rounded cursor-pointer transition-colors hover:bg-muted"
+                  className={`flex items-center py-2 px-3 rounded cursor-pointer transition-colors ${
+                    isSelected || isChildSelected
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-muted"
+                  }`}
                   onClick={() => {
-                    if (hasSubcategories) {
-                      toggleCategory(cat.id);
-                    } else {
-                      handleCategoryClick(cat.slug);
-                    }
+                    handleCategoryClick(cat.slug);
+                    if (hasSubcategories) toggleCategory(cat.id);
                   }}
                 >
-                  <div className="w-2 h-2 rounded-full mr-3 bg-muted-foreground/30" />
+                  <div className={`w-2 h-2 rounded-full mr-3 ${isSelected || isChildSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
                   <span className="text-sm flex-1">{cat.name}</span>
                   {hasSubcategories && (
                     <div className="ml-auto">
@@ -217,20 +296,24 @@ const Shop = () => {
                     {level2Categories.map((subcat) => {
                       const level3Categories = getSubcategories(subcat.id);
                       const hasLevel3 = level3Categories.length > 0;
+                      const isSubSelected = selectedCategory?.id === subcat.id;
+                      const subDescendantSlugs = getAllDescendantSlugs(subcat.id);
+                      const isSubChildSelected = selectedCategory && subDescendantSlugs.includes(selectedCategory.slug);
 
                       return (
                         <div key={subcat.id} className="space-y-0.5">
                           <div
-                            className="flex items-center py-1 px-2 rounded cursor-pointer transition-colors hover:bg-muted"
+                            className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
+                              isSubSelected || isSubChildSelected
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-muted"
+                            }`}
                             onClick={() => {
-                              if (hasLevel3) {
-                                toggleCategory(subcat.id);
-                              } else {
-                                handleCategoryClick(subcat.slug);
-                              }
+                              handleCategoryClick(subcat.slug);
+                              if (hasLevel3) toggleCategory(subcat.id);
                             }}
                           >
-                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                            <div className={`w-1.5 h-1.5 rounded-full ${isSubSelected || isSubChildSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
                             <span className="text-sm text-muted-foreground ml-2 flex-1">
                               {subcat.name}
                             </span>
@@ -248,18 +331,25 @@ const Shop = () => {
                           {/* Level 3 */}
                           {hasLevel3 && openCategories.includes(subcat.id) && (
                             <div className="ml-5 space-y-0.5">
-                              {level3Categories.map((subsubcat) => (
-                                <div
-                                  key={subsubcat.id}
-                                  className="flex items-center py-1 px-2 ml-3 rounded cursor-pointer transition-colors hover:bg-muted"
-                                  onClick={() => handleCategoryClick(subsubcat.slug)}
-                                >
-                                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                                  <span className="text-sm text-muted-foreground ml-2">
-                                    {subsubcat.name}
-                                  </span>
-                                </div>
-                              ))}
+                              {level3Categories.map((subsubcat) => {
+                                const isSubSubSelected = selectedCategory?.id === subsubcat.id;
+                                return (
+                                  <div
+                                    key={subsubcat.id}
+                                    className={`flex items-center py-1 px-2 ml-3 rounded cursor-pointer transition-colors ${
+                                      isSubSubSelected
+                                        ? "bg-primary/10 text-primary"
+                                        : "hover:bg-muted"
+                                    }`}
+                                    onClick={() => handleCategoryClick(subsubcat.slug)}
+                                  >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isSubSubSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                                    <span className="text-sm text-muted-foreground ml-2">
+                                      {subsubcat.name}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -295,21 +385,31 @@ const Shop = () => {
         {/* Breadcrumb */}
         <div className="bg-muted/50 border-b border-border">
           <div className="container mx-auto px-4 py-3">
-            <nav className="flex items-center gap-2 text-sm">
-              <Link to="/" className="text-muted-foreground hover:text-foreground">
-                Home
-              </Link>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground">Shop</span>
+            <nav className="flex items-center gap-2 text-sm flex-wrap">
+              {getBreadcrumbs().map((crumb, index) => (
+                <div key={crumb.path} className="flex items-center gap-2">
+                  <Link
+                    to={crumb.path}
+                    className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                  >
+                    {crumb.name}
+                  </Link>
+                  {index < getBreadcrumbs().length - 1 && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+              ))}
             </nav>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-4 md:py-8">
           <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">All Products</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
+              {selectedCategory ? selectedCategory.name : "All Products"}
+            </h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Browse our complete range of products
+              {sortedProducts.length} products available
             </p>
           </div>
 
@@ -323,15 +423,17 @@ const Shop = () => {
                     Filters
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 overflow-y-auto">
-                  <FilterContent />
+                <SheetContent side="left" className="w-80 p-0">
+                  <div className="h-full overflow-y-auto p-6">
+                    <FilterContent />
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>
 
             {/* Desktop Filters Sidebar */}
             <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
+              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-4 border-r border-border">
                 <FilterContent />
               </div>
             </aside>
