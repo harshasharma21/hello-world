@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue, useTransition } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categories, tags } from "@/data/mockData";
-import { ChevronRight, ChevronDown, SlidersHorizontal, Search } from "lucide-react";
+import { ChevronRight, ChevronDown, SlidersHorizontal, Search, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -23,30 +23,8 @@ import {
   buildProductPath,
   getAllDescendantSlugs,
   getSubcategories,
+  categorySlugToGroupCodes,
 } from "@/utils/categoryMapping";
-
-// Reverse mapping: category slug to GroupCodes
-const categorySlugToGroupCodes: Record<string, string[]> = {
-  "fruit-veg-salad-pulses": ["FRUIT & VEG"],
-  "food-cupboard": ["GROCERY", "GENERAL", "FROZEN"],
-  "soft-drinks-better": ["SOFT DRINKS"],
-  "crisps-savoury": ["SNACKS"],
-  "coffee-tea-hot-drinks": ["TEA & COFFEE", "COFFEE & TEA"],
-  "chocolate-confectionery": ["CHOCOLATE & SWEETS"],
-  "dairy": ["DAIRY"],
-  "bakery": ["BAKERY"],
-  "drinks": ["DRINKS", "SOFT DRINKS"],
-  "snacking": ["SNACKS", "CHOCOLATE & SWEETS"],
-  "meat-fish": ["MEAT & FISH"],
-  "table-sauces-condiments": ["CONDIMENTS"],
-  "oils-vinegar": ["OILS"],
-  "pasta-rice-noodles": ["PASTA"],
-  "sauces-pastes": ["SAUCES"],
-  "syrup-honey": ["HONEY"],
-  "breakfast-cereals": ["CEREALS"],
-  "baby-child": ["BABY"],
-  "hygiene-health-pets": ["HEALTH"],
-};
 
 // Get all GroupCodes for a category and its descendants
 const getGroupCodesForCategory = (categorySlug: string): string[] => {
@@ -56,12 +34,13 @@ const getGroupCodesForCategory = (categorySlug: string): string[] => {
   const descendantSlugs = getAllDescendantSlugs(category.id);
   const groupCodes = new Set<string>();
 
+  // Add codes from all descendants
   descendantSlugs.forEach((slug) => {
     const codes = categorySlugToGroupCodes[slug] || [];
     codes.forEach((code) => groupCodes.add(code));
   });
 
-  // Also add direct mapping
+  // Also add direct mapping for the current category
   const directCodes = categorySlugToGroupCodes[categorySlug] || [];
   directCodes.forEach((code) => groupCodes.add(code));
 
@@ -145,6 +124,7 @@ const Category = () => {
   // State
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPending, startTransition] = useTransition();
   const [openCategories, setOpenCategories] = useState<string[]>(() => {
     if (category) {
       const expandedIds: string[] = [category.id];
@@ -164,20 +144,29 @@ const Category = () => {
     search: searchQuery || undefined,
   });
 
+  // Use deferred value for filtering to prevent UI blocking
+  const deferredProducts = useDeferredValue(allProducts);
+  const isFiltering = deferredProducts !== allProducts;
+
   // Filter products by category's GroupCodes
   const categoryProducts = useMemo(() => {
     if (!category) return [];
 
     const validGroupCodes = getGroupCodesForCategory(category.slug);
-    if (validGroupCodes.length === 0) return allProducts;
+    
+    // If no specific group codes, show products that don't have a category yet
+    if (validGroupCodes.length === 0) {
+      return deferredProducts.slice(0, 100); // Limit for performance
+    }
 
-    return allProducts.filter((p) => {
+    return deferredProducts.filter((p) => {
       const productGroupCode = p.group_code?.trim().toUpperCase();
+      if (!productGroupCode) return false;
       return validGroupCodes.some(
         (code) => code.toUpperCase() === productGroupCode
       );
     });
-  }, [allProducts, category]);
+  }, [deferredProducts, category]);
 
   // Build breadcrumb chain
   const buildBreadcrumbChain = () => {
@@ -519,26 +508,45 @@ const Category = () => {
                     </div>
                   ))}
                 </div>
-              ) : categoryProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {categoryProducts.map((product) => (
-                    <CategoryProductCard key={product.id} product={product} />
-                  ))}
-                </div>
               ) : (
-                <div className="text-center py-16">
-                  <p className="text-lg text-muted-foreground mb-4">
-                    No products available in this category
-                    {searchQuery ? ` matching "${searchQuery}"` : ""}.
-                  </p>
-                  {searchQuery ? (
-                    <Button variant="link" onClick={() => setSearchQuery("")} className="mt-4">
-                      Clear search
-                    </Button>
+                <div className="relative">
+                  {/* Filtering overlay */}
+                  {isFiltering && (
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                      <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-lg">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <span className="text-sm font-medium">Filtering...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {categoryProducts.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {categoryProducts.slice(0, 100).map((product) => (
+                        <CategoryProductCard key={product.id} product={product} />
+                      ))}
+                      {categoryProducts.length > 100 && (
+                        <div className="col-span-full text-center py-4 text-muted-foreground">
+                          Showing 100 of {categoryProducts.length} products. Use search to find specific items.
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <Link to="/shop" className="text-primary hover:underline">
-                      Browse all products
-                    </Link>
+                    <div className="text-center py-16">
+                      <p className="text-lg text-muted-foreground mb-4">
+                        No products available in this category
+                        {searchQuery ? ` matching "${searchQuery}"` : ""}.
+                      </p>
+                      {searchQuery ? (
+                        <Button variant="link" onClick={() => setSearchQuery("")} className="mt-4">
+                          Clear search
+                        </Button>
+                      ) : (
+                        <Link to="/shop" className="text-primary hover:underline">
+                          Browse all products
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
