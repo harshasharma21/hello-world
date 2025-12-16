@@ -63,10 +63,11 @@ const ContactUs = () => {
           <div className="mb-8 flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
             <div className="lg:w-1/2">
               <p className="text-muted-foreground">
-                Contact us about anything related to our company or services.
+                Contact us about anything related to our company or services. We're here to help.
               </p>
-              <p className="text-muted-foreground mt-1">
-                We'll do our best to get back to you as soon as possible.
+              <p className="text-muted-foreground mt-2">
+                for direct inquiries, please email us at{" "}
+                <a href="mailto:inquiries@natureliawholefood.com" className="text-primary hover:underline">inquiries@natureliawholefood.com</a>
               </p>
             </div>
             
@@ -75,13 +76,13 @@ const ContactUs = () => {
               <h3 className="font-semibold text-foreground mb-2">Naturelia Wholefood</h3>
               <div className="flex items-center lg:justify-end gap-2 text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 flex-shrink-0" />
-                <span className="text-sm">123 Business Park, London, E1 6AN, UK</span>
+                <span className="text-sm">308–312 Chiswick High Road, London, W4 1NP </span>
               </div>
               <div className="flex items-center lg:justify-end gap-2 text-muted-foreground">
-                <Phone className="h-4 w-4 flex-shrink-0" />
+                {/* <Phone className="h-4 w-4 flex-shrink-0" />
                 <a href="tel:+44123456789" className="text-sm text-primary hover:underline">
                   +44 123 456 789
-                </a>
+                </a> */}
               </div>
             </div>
           </div>
@@ -189,7 +190,7 @@ const ContactUs = () => {
             {/* Map */}
             <div className="h-[400px] lg:h-auto min-h-[400px] rounded-lg overflow-hidden shadow-sm">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2482.4086254802674!2d-0.07812402359414673!3d51.51833127181649!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48761cb3b5a8f9d5%3A0x4c4c4c4c4c4c4c4c!2sLondon%20E1%206AN%2C%20UK!5e0!3m2!1sen!2sus!4v1635000000000!5m2!1sen!2sus"
+                src="https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1s308+Chiswick+High+Rd.,+Chiswick,+London+W4+1NS,+UK!6i14!3m1!1sen!5m1!1sen"
                 width="100%"
                 height="100%"
                 style={{ border: 0, minHeight: "400px" }}

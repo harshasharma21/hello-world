@@ -122,7 +122,7 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
   const [openCategories, setOpenCategories] = useState<string[]>([]);
-  const itemsPerPage = 32;
+  const itemsPerPage = 20; // Changed from 32 to 20 (4 columns × 5 rows)
 
   // Parse category from URL path
   const pathParts = fullPath?.split("/").filter(Boolean) || [];
@@ -176,6 +176,7 @@ const Shop = () => {
   };
 
   const handleCategoryClick = (slug: string) => {
+    setCurrentPage(1); // Reset to page 1 when changing category
     navigate(buildCategoryPath(slug));
   };
 
@@ -207,7 +208,7 @@ const Shop = () => {
   };
 
   const rootCategories = getRootCategories();
-
+  
   // Build breadcrumb path from URL
   const getBreadcrumbs = () => {
     const breadcrumbs = [{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }];
@@ -249,7 +250,10 @@ const Shop = () => {
                 ? "bg-primary/10 text-primary font-medium" 
                 : "hover:bg-muted"
             }`}
-            onClick={() => navigate("/shop")}
+            onClick={() => {
+              setCurrentPage(1); // Reset page
+              navigate("/shop");
+            }}
           >
             <div className={`w-2 h-2 rounded-full mr-3 ${!selectedCategory ? "bg-primary" : "bg-muted-foreground/30"}`} />
             <span className="text-sm">All Products</span>
@@ -433,7 +437,7 @@ const Shop = () => {
 
             {/* Desktop Filters Sidebar */}
             <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-4 border-r border-border scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto pr-4 border-r border-border">
                 <FilterContent />
               </div>
             </aside>
@@ -539,8 +543,8 @@ const Shop = () => {
                     </div>
                   )}
 
-                  {/* Pagination */}
-                  {sortedProducts.length > 0 && totalPages > 1 && (
+                  {/* Pagination - Show for all cases when totalPages > 1 */}
+                  {totalPages > 1 && sortedProducts.length > 0 && (
                     <div className="mt-12 space-y-4">
                       <div className="text-center text-sm text-muted-foreground">
                         Page {currentPage} of {totalPages}

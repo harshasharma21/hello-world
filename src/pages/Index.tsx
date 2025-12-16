@@ -103,7 +103,7 @@ const Index = () => {
         <FeaturedProducts />
 
         {/* CTA Section */}
-        <section className="py-16 bg-gradient-to-r from-accent to-sage-green text-accent-foreground">
+        {/* <section className="py-16 bg-gradient-to-r from-accent to-sage-green text-accent-foreground">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Ready to Order in Bulk?
@@ -118,7 +118,7 @@ const Index = () => {
               </Link>
             </Button>
           </div>
-        </section>
+        </section> */}
       </main>
 
       <Footer />

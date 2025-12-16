@@ -66,8 +66,8 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-400 hover:text-primary transition-smooth">
-                  Delivery Information
+                <a href="mailto:inquiries@natureliawholefood.com" className="text-neutral-400 hover:text-primary transition-smooth">
+                  FAQ
                 </a>
               </li>
               <li>
@@ -76,8 +76,8 @@ export const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-neutral-400 hover:text-primary transition-smooth">
-                  FAQ
+                <a href="mailto:jobs@natureliawholefood.com" className="text-neutral-400 hover:text-primary transition-smooth">
+                  Careers
                 </a>
               </li>
             </ul>
@@ -87,19 +87,28 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4 text-primary-foreground">Contact Us</h4>
             <ul className="space-y-2 text-sm text-neutral-400">
-              <li>123 Business Park</li>
-              <li>London, UK</li>
-              <li>E1 6AN</li>
-              <li className="pt-2">
+              <p>308–312 Chiswick High Road, London, W4 1NP</p>
+              {/* <li className="pt-2">
                 <a href="tel:+44123456789" className="hover:text-primary transition-smooth">
                   +44 123 456 789
                 </a>
-              </li>
+              </li> */}
               <li>
-                <a href="mailto:sales@natureliawholefoods.com" className="hover:text-primary transition-smooth">
-                  sales@natureliawholefoods.com
+                <a href="mailto:sales@natureliawholefood.com" className="hover:text-primary transition-smooth">
+                  sales@natureliawholefood.com
                 </a>
               </li>
+                <li>
+                <a href="mailto:inquiries@natureliawholefood.com" className="hover:text-primary transition-smooth">
+                   inquiries@natureliawholefood.com
+                </a>
+                </li>
+                <li>
+                <a href="mailto:jobs@natureliawholefood.com" className="hover:text-primary transition-smooth">
+                  jobs@natureliawholefood.com
+                </a>
+                </li>
+              
             </ul>
           </div>
         </div>

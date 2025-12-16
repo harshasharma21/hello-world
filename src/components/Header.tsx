@@ -95,15 +95,15 @@ export const Header = () => {
                 href="tel:+44123456789"
                 className="flex items-center gap-2 hover:opacity-80"
               >
-                <Phone className="h-4 w-4" />
-                <span className="hidden sm:inline">+44 123 456 789</span>
+                {/* <Phone className="h-4 w-4" />
+                <span className="hidden sm:inline">+44 123 456 789</span> */}
               </a>
               <a
-                href="mailto:sales@natureliawholefoods.com"
+                href="mailto:sales@natureliawholefood.com"
                 className="flex items-center gap-2 hover:opacity-80"
               >
                 <Mail className="h-4 w-4" />
-                <span className="hidden sm:inline">sales@natureliawholefoods.com</span>
+                <span className="hidden sm:inline">sales@natureliawholefood.com</span>
               </a>
             </div>
 
@@ -225,13 +225,13 @@ export const Header = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                <NavigationMenuItem>
+                {/* <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <Button variant="ghost" asChild>
                       <Link to="/fast-order">Fast Order</Link>
                     </Button>
                   </NavigationMenuLink>
-                </NavigationMenuItem>
+                </NavigationMenuItem> */}
 
                 {!user && (
                   <>
@@ -245,7 +245,7 @@ export const Header = () => {
                       </NavigationMenuLink>
                     </NavigationMenuItem>
 
-                    <NavigationMenuItem>
+                    {/* <NavigationMenuItem>
                       <NavigationMenuLink asChild>
                         <Button variant="ghost" asChild>
                           <Link to="/new-supplier-signup">
@@ -253,7 +253,7 @@ export const Header = () => {
                           </Link>
                         </Button>
                       </NavigationMenuLink>
-                    </NavigationMenuItem>
+                    </NavigationMenuItem> */}
                   </>
                 )}
 
