@@ -16,42 +16,20 @@ import { useProductImage } from "@/hooks/useProductImage";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import {
-  getCategorySlugFromGroupCode,
   getCategoryBySlug,
   getCategoryById,
   buildCategoryPath,
   buildProductPath,
   getAllDescendantSlugs,
   getSubcategories,
-  categorySlugToGroupCodes,
 } from "@/utils/categoryMapping";
-
-// Get all GroupCodes for a category and its descendants
-const getGroupCodesForCategory = (categorySlug: string): string[] => {
-  const category = getCategoryBySlug(categorySlug);
-  if (!category) return [];
-
-  const descendantSlugs = getAllDescendantSlugs(category.id);
-  const groupCodes = new Set<string>();
-
-  // Add codes from all descendants
-  descendantSlugs.forEach((slug) => {
-    const codes = categorySlugToGroupCodes[slug] || [];
-    codes.forEach((code) => groupCodes.add(code));
-  });
-
-  // Also add direct mapping for the current category
-  const directCodes = categorySlugToGroupCodes[categorySlug] || [];
-  directCodes.forEach((code) => groupCodes.add(code));
-
-  return Array.from(groupCodes);
-};
+import { productBelongsToCategory, categorizeProduct } from "@/utils/productCategorizer";
 
 // Product Card with API-fetched image
 const CategoryProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
   const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
-  const categorySlug = getCategorySlugFromGroupCode(product.group_code);
+  const categorySlug = categorizeProduct(product.name);
   const productPath = buildProductPath(product.id, categorySlug);
 
   const handleAddToCart = () => {
@@ -148,23 +126,17 @@ const Category = () => {
   const deferredProducts = useDeferredValue(allProducts);
   const isFiltering = deferredProducts !== allProducts;
 
-  // Filter products by category's GroupCodes
+  // Filter products by keyword-based categorization
   const categoryProducts = useMemo(() => {
     if (!category) return [];
 
-    const validGroupCodes = getGroupCodesForCategory(category.slug);
+    // Get all descendant slugs for this category
+    const descendantSlugs = getAllDescendantSlugs(category.id);
     
-    // If no specific group codes, show products that don't have a category yet
-    if (validGroupCodes.length === 0) {
-      return deferredProducts.slice(0, 100); // Limit for performance
-    }
-
+    // Filter products that match this category or any of its descendants
     return deferredProducts.filter((p) => {
-      const productGroupCode = p.group_code?.trim().toUpperCase();
-      if (!productGroupCode) return false;
-      return validGroupCodes.some(
-        (code) => code.toUpperCase() === productGroupCode
-      );
+      const productCategorySlug = categorizeProduct(p.name);
+      return descendantSlugs.includes(productCategorySlug);
     });
   }, [deferredProducts, category]);
 
