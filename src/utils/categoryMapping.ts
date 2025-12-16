@@ -1,28 +1,84 @@
 import { categories } from "@/data/mockData";
 
-// Mapping from CSV GroupCode to mockData category slugs
+// Mapping from database GroupCode to mockData category slugs
+// Based on actual database values: GENERAL, GROCERY, DAIRY, CHOCOLATE & SWEETS, 
+// COFFEE & TEA, SOFT DRINKS, CILLED, CRISP&NUTS&SNACK, BAKERY, SAUCE, DAIRY FOOD,
+// HOUSEHOLD, TEA & COFFEE, HOUSEHOLD & HEALTH & BEAUTY, SNACKS, BABY PRODUCTS, 
+// FROZEN, PET FOODS, BABY FOOD, FRUIT & VEG, ALCOHOLIC DRINKS, VEGETABLE, etc.
 export const groupCodeToCategorySlug: Record<string, string> = {
-  "FRUIT & VEG": "fruit-veg-salad-pulses",
-  "GROCERY": "food-cupboard",
-  "SOFT DRINKS": "soft-drinks-better",
+  // Food Cupboard - general groceries
   "GENERAL": "food-cupboard",
-  "SNACKS": "crisps-savoury",
+  "GROCERY": "food-cupboard",
+  "FROZEN": "food-cupboard",
+  
+  // Drinks
+  "SOFT DRINKS": "soft-drinks-better",
+  "ALCOHOLIC DRINKS": "drinks",
+  "ALCHOHOL DRINKS": "drinks",
+  
+  // Hot Drinks
   "TEA & COFFEE": "coffee-tea-hot-drinks",
   "COFFEE & TEA": "coffee-tea-hot-drinks",
+  
+  // Snacks
+  "SNACKS": "crisps-savoury",
+  "CRISP&NUTS&SNACK": "crisps-savoury",
+  
+  // Confectionery
   "CHOCOLATE & SWEETS": "chocolate-confectionery",
+  
+  // Dairy
   "DAIRY": "dairy",
+  "DAIRY FOOD": "dairy",
+  "CILLED": "dairy", // Chilled items
+  
+  // Bakery
   "BAKERY": "bakery",
-  "DRINKS": "drinks",
-  "FROZEN": "food-cupboard",
-  "MEAT & FISH": "meat-fish",
-  "CONDIMENTS": "table-sauces-condiments",
-  "OILS": "oils-vinegar",
-  "PASTA": "pasta-rice-noodles",
+  
+  // Fresh
+  "FRUIT & VEG": "fruit-veg-salad-pulses",
+  "FRUIT": "fruit-veg-salad-pulses",
+  "VEGETABLE": "fruit-veg-salad-pulses",
+  
+  // Sauces & Condiments
+  "SAUCE": "table-sauces-condiments",
   "SAUCES": "sauces-pastes",
-  "HONEY": "syrup-honey",
-  "CEREALS": "breakfast-cereals",
+  "CONDIMENTS": "table-sauces-condiments",
+  
+  // Baby
+  "BABY PRODUCTS": "baby-child",
+  "BABY FOOD": "baby-child",
   "BABY": "baby-child",
+  
+  // Health & Household
+  "HOUSEHOLD": "hygiene-health-pets",
+  "HOUSEHOLD & HEALTH & BEAUTY": "hygiene-health-pets",
   "HEALTH": "hygiene-health-pets",
+  "MEDICINE": "hygiene-health-pets",
+  
+  // Pets
+  "PET FOODS": "hygiene-health-pets",
+  
+  // Other
+  "CIGARETTES & TOBACCO": "food-cupboard",
+};
+
+// Reverse mapping: category slug to all matching GroupCodes
+export const categorySlugToGroupCodes: Record<string, string[]> = {
+  "food-cupboard": ["GENERAL", "GROCERY", "FROZEN", "CIGARETTES & TOBACCO"],
+  "soft-drinks-better": ["SOFT DRINKS"],
+  "drinks": ["SOFT DRINKS", "ALCOHOLIC DRINKS", "ALCHOHOL DRINKS"],
+  "coffee-tea-hot-drinks": ["TEA & COFFEE", "COFFEE & TEA"],
+  "crisps-savoury": ["SNACKS", "CRISP&NUTS&SNACK"],
+  "snacking": ["SNACKS", "CRISP&NUTS&SNACK", "CHOCOLATE & SWEETS"],
+  "chocolate-confectionery": ["CHOCOLATE & SWEETS"],
+  "dairy": ["DAIRY", "DAIRY FOOD", "CILLED"],
+  "bakery": ["BAKERY"],
+  "fruit-veg-salad-pulses": ["FRUIT & VEG", "FRUIT", "VEGETABLE"],
+  "table-sauces-condiments": ["SAUCE", "CONDIMENTS"],
+  "sauces-pastes": ["SAUCES", "SAUCE"],
+  "baby-child": ["BABY PRODUCTS", "BABY FOOD", "BABY"],
+  "hygiene-health-pets": ["HOUSEHOLD", "HOUSEHOLD & HEALTH & BEAUTY", "HEALTH", "MEDICINE", "PET FOODS"],
 };
 
 // Get category slug from group code
