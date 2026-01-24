@@ -55,7 +55,7 @@ export const useNewProducts = (options: UseNewProductsOptions = {}) => {
       }
 
       if (!products || products.length === 0) {
-        return [];
+        return { items: [], total: 0 };
       }
 
       // Get category mappings for these products
