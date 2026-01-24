@@ -199,104 +199,8 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
   return useQuery({
     queryKey: ["productsByCategory", categoryName, limit],
     queryFn: async (): Promise<ProductWithCategory[]> => {
-      if (!categoryName) {
-        // Return all products if no category specified
-        const { data: products, error } = await supabase
-          .from("newProducts")
-          .select(`
-            id,
-            name,
-            Barcode,
-            information_taglines,
-            updated_price_website
-          `)
-          .not("name", "is", null)
-          .limit(limit);
-
-        if (error) throw error;
-
-        // Get all category mappings
-        const productNames = products?.map(p => p.name).filter(Boolean) || [];
-        const { data: categories } = await supabase
-          .from("latestCategories")
-          .select(`
-            "Product Name",
-            "Category Level 1",
-            "Category Level 2",
-            "Category Level 3",
-            "Category Level 4"
-          `)
-          .in("Product Name", productNames);
-
-        const categoryMap = new Map();
-        categories?.forEach(cat => {
-          if (cat["Product Name"]) {
-            categoryMap.set(cat["Product Name"], {
-              level1: cat["Category Level 1"],
-              level2: cat["Category Level 2"],
-              level3: cat["Category Level 3"],
-              level4: cat["Category Level 4"],
-            });
-          }
-        });
-
-        return (products || []).map(p => ({
-          ...p,
-          categoryLevel1: categoryMap.get(p.name)?.level1 || null,
-          categoryLevel2: categoryMap.get(p.name)?.level2 || null,
-          categoryLevel3: categoryMap.get(p.name)?.level3 || null,
-          categoryLevel4: categoryMap.get(p.name)?.level4 || null,
-        }));
-      }
-
-      // Get products matching this category in any of the 4 levels
-      const normalizedCategoryName = categoryName.trim();
-      
-      const { data: matchingCategories, error: catError } = await supabase
-        .from("latestCategories")
-        .select(`
-          "Product Name",
-          "Category Level 1",
-          "Category Level 2",
-          "Category Level 3",
-          "Category Level 4"
-        `)
-        .or(
-          `"Category Level 1".ilike.%${normalizedCategoryName}%,"Category Level 2".ilike.%${normalizedCategoryName}%,"Category Level 3".ilike.%${normalizedCategoryName}%,"Category Level 4".ilike.%${normalizedCategoryName}%`
-        );
-
-      if (catError) {
-        console.error("Error fetching categories:", catError);
-        throw catError;
-      }
-
-      if (!matchingCategories || matchingCategories.length === 0) {
-        return [];
-      }
-
-      // Filter for exact matches
-      const exactMatches = matchingCategories.filter(cat => {
-        const levels = [
-          cat["Category Level 1"],
-          cat["Category Level 2"],
-          cat["Category Level 3"],
-          cat["Category Level 4"],
-        ];
-        return levels.some(
-          level => level && level.trim().toLowerCase() === normalizedCategoryName.toLowerCase()
-        );
-      });
-
-      const productNames = exactMatches
-        .map(c => c["Product Name"])
-        .filter(Boolean);
-
-      if (productNames.length === 0) {
-        return [];
-      }
-
-      // Get products
-      const { data: products, error: prodError } = await supabase
+      // Get products from newProducts table
+      const { data: products, error } = await supabase
         .from("newProducts")
         .select(`
           id,
@@ -305,14 +209,33 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
           information_taglines,
           updated_price_website
         `)
-        .in("name", productNames)
+        .not("name", "is", null)
         .limit(limit);
 
-      if (prodError) throw prodError;
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
+      }
 
-      // Create category map
+      if (!products || products.length === 0) {
+        return [];
+      }
+
+      // Get all category mappings
+      const productNames = products.map(p => p.name).filter(Boolean);
+      const { data: categories } = await supabase
+        .from("latestCategories")
+        .select(`
+          "Product Name",
+          "Category Level 1",
+          "Category Level 2",
+          "Category Level 3",
+          "Category Level 4"
+        `)
+        .in("Product Name", productNames);
+
       const categoryMap = new Map();
-      exactMatches.forEach(cat => {
+      categories?.forEach(cat => {
         if (cat["Product Name"]) {
           categoryMap.set(cat["Product Name"], {
             level1: cat["Category Level 1"],
@@ -323,15 +246,32 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
         }
       });
 
-      return (products || []).map(p => ({
+      let result = (products || []).map(p => ({
         ...p,
         categoryLevel1: categoryMap.get(p.name)?.level1 || null,
         categoryLevel2: categoryMap.get(p.name)?.level2 || null,
         categoryLevel3: categoryMap.get(p.name)?.level3 || null,
         categoryLevel4: categoryMap.get(p.name)?.level4 || null,
       }));
+
+      // Filter by category if specified
+      if (categoryName) {
+        const normalizedCategoryName = categoryName.trim().toLowerCase();
+        result = result.filter(product => {
+          const levels = [
+            product.categoryLevel1,
+            product.categoryLevel2,
+            product.categoryLevel3,
+            product.categoryLevel4,
+          ];
+          return levels.some(
+            level => level && level.trim().toLowerCase() === normalizedCategoryName
+          );
+        });
+      }
+
+      return result;
     },
-    enabled: true,
     staleTime: 5 * 60 * 1000,
   });
 };

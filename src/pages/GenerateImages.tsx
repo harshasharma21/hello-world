@@ -4,7 +4,6 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { mockProducts } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -22,17 +21,13 @@ const GenerateImages = () => {
   }, []);
 
   const fetchProductsCount = async () => {
+    // Count products from newProducts table
     const { count } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true })
-      .or('images.is.null,images.eq.{},images.eq.{/placeholder.svg}');
+      .from('newProducts')
+      .select('*', { count: 'exact', head: true });
     
     setTotalProducts(count || 0);
   };
-
-  const productsNeedingImages = mockProducts.filter(p => 
-    !p.images[0] || p.images[0] === "/placeholder.svg"
-  );
 
   const generateAllImages = async () => {
     setIsGenerating(true);
@@ -97,21 +92,19 @@ const GenerateImages = () => {
                   variant="outline"
                   className="w-full mb-4"
                 >
-                  Check Products Needing Images
+                  Check Products Count
                 </Button>
                 
                 <p className="text-muted-foreground mb-4">
                   {totalProducts > 0 
-                    ? `${totalProducts} products need images` 
-                    : productsNeedingImages.length > 0 
-                      ? `${productsNeedingImages.length} products need images (from mock data)`
-                      : 'Click "Check Products" to see how many products need images'
+                    ? `${totalProducts} products in database` 
+                    : 'Click "Check Products" to see product count'
                   }
                 </p>
                 
                 <Button 
                   onClick={generateAllImages}
-                  disabled={isGenerating || (totalProducts === 0 && productsNeedingImages.length === 0)}
+                  disabled={isGenerating || totalProducts === 0}
                   className="w-full"
                 >
                   {isGenerating ? (

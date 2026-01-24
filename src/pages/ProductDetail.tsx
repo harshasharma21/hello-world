@@ -5,44 +5,48 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ShoppingCart, ChevronRight } from "lucide-react";
-import { useProduct, useProducts } from "@/hooks/useProducts";
-import { useProductImage } from "@/hooks/useProductImage";
+import { useNewProduct, useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { categories } from "@/data/mockData";
-import {
-  getCategorySlugFromGroupCode,
-  buildCategoryPath,
-  getCategoryBySlug,
-  getAllDescendantSlugs,
-} from "@/utils/categoryMapping";
 
-// Related product card with API-fetched image
-const RelatedProductCard = ({ product }: { product: any }) => {
-  const { imageUrl, isLoading } = useProductImage(product.barcode);
-  const categorySlug = getCategorySlugFromGroupCode(product.group_code);
-  const productPath = buildCategoryPath(categorySlug) + `/product/${product.id}`;
+// Format barcode properly (handle scientific notation)
+const formatBarcode = (barcode: number | null): string => {
+  if (!barcode) return "";
+  return barcode.toLocaleString("fullwide", { useGrouping: false });
+};
+
+// Get Open Food Facts image URL
+const getProductImageUrl = (barcode: number | null): string => {
+  if (!barcode) return "/placeholder.svg";
+  const barcodeStr = formatBarcode(barcode);
+  
+  if (barcodeStr.length >= 13) {
+    return `https://images.openfoodfacts.org/images/products/${barcodeStr.slice(0, 3)}/${barcodeStr.slice(3, 6)}/${barcodeStr.slice(6, 9)}/${barcodeStr.slice(9)}/front_en.3.400.jpg`;
+  }
+  return `https://images.openfoodfacts.org/images/products/${barcodeStr}/front_en.3.400.jpg`;
+};
+
+// Related product card
+const RelatedProductCard = ({ product }: { product: ProductWithCategory }) => {
+  const imageUrl = getProductImageUrl(product.Barcode);
 
   return (
-    <Link to={productPath} className="group">
+    <Link to={`/shop/product/${product.id}`} className="group">
       <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-2">
-        {isLoading ? (
-          <Skeleton className="w-full h-full" />
-        ) : (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/placeholder.svg";
-            }}
-          />
-        )}
+        <img
+          src={imageUrl}
+          alt={product.name || "Product"}
+          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder.svg";
+          }}
+        />
       </div>
       <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary">
-        {product.name}
+        {product.name || "Unknown Product"}
       </h3>
-      <p className="text-primary font-bold mt-1">£{(product.price || 0).toFixed(2)}</p>
+      <p className="text-primary font-bold mt-1">£{(product.updated_price_website || 0).toFixed(2)}</p>
     </Link>
   );
 };
@@ -53,21 +57,34 @@ interface ProductDetailProps {
 
 const ProductDetail = ({ productId }: ProductDetailProps) => {
   const { id: paramId, "*": fullPath } = useParams();
-  const id = productId || paramId;
+  
+  // Parse product ID from path if not provided directly
+  let id = productId || paramId;
+  if (!id && fullPath) {
+    const parts = fullPath.split("/");
+    const productIndex = parts.indexOf("product");
+    if (productIndex !== -1 && parts[productIndex + 1]) {
+      id = parts[productIndex + 1];
+    }
+  }
+  
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
 
-  const { data: product, isLoading } = useProduct(id || "");
-  const { imageUrl: productImage, isLoading: imageLoading } = useProductImage(product?.barcode || "");
-  const { data: relatedProducts = [] } = useProducts({
-    groupCode: product?.group_code || undefined,
-    limit: 5,
-  });
+  const { data: product, isLoading } = useNewProduct(id ? parseInt(id, 10) : null);
+  
+  // Get related products from same category
+  const { data: relatedProducts = [] } = useProductsByCategory(
+    product?.categoryLevel1 || null,
+    5
+  );
 
   // Filter out current product from related
-  const filteredRelated = relatedProducts.filter((p) => p.id !== id).slice(0, 4);
+  const filteredRelated = relatedProducts
+    .filter((p) => p.id.toString() !== id)
+    .slice(0, 4);
 
   // Build breadcrumb from URL path
   const getBreadcrumbs = () => {
@@ -76,37 +93,36 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
       { name: "Shop", path: "/shop" },
     ];
 
-    // Extract category path from URL
-    // URL format: /shop/category1/category2/product/id
-    const pathParts = fullPath?.split("/").filter(Boolean) || [];
-
-    if (pathParts.length > 0) {
-      const productIndex = pathParts.indexOf("product");
-
-      // Get all parts before "product"
-      const categoryParts =
-        productIndex !== -1 ? pathParts.slice(0, productIndex) : pathParts;
-
-      // Build breadcrumb for each category level
-      let currentPath = "/shop";
-      categoryParts.forEach((part) => {
-        currentPath += `/${part}`;
-
-        // Find the category name from slug
-        const category = categories.find((c) => c.slug === part);
-        const categoryName = category?.name || part.replace(/-/g, " ").toUpperCase();
-
-        breadcrumbs.push({
-          name: categoryName,
-          path: currentPath,
-        });
-      });
+    // Add category breadcrumbs from product's category levels
+    if (product?.categoryLevel1) {
+      const cat1 = categories.find(c => c.name === product.categoryLevel1);
+      if (cat1) {
+        breadcrumbs.push({ name: cat1.name, path: `/shop/${cat1.slug}` });
+      }
+    }
+    if (product?.categoryLevel2) {
+      const cat2 = categories.find(c => c.name === product.categoryLevel2);
+      if (cat2) {
+        breadcrumbs.push({ name: cat2.name, path: `/shop/${cat2.slug}` });
+      }
+    }
+    if (product?.categoryLevel3) {
+      const cat3 = categories.find(c => c.name === product.categoryLevel3);
+      if (cat3) {
+        breadcrumbs.push({ name: cat3.name, path: `/shop/${cat3.slug}` });
+      }
+    }
+    if (product?.categoryLevel4) {
+      const cat4 = categories.find(c => c.name === product.categoryLevel4);
+      if (cat4) {
+        breadcrumbs.push({ name: cat4.name, path: `/shop/${cat4.slug}` });
+      }
     }
 
     // Add product name at the end
     if (product) {
       breadcrumbs.push({
-        name: product.name,
+        name: product.name || "Product",
         path: "",
       });
     }
@@ -117,14 +133,15 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
   const handleAddToCart = () => {
     if (!product) return;
 
+    const imageUrl = getProductImageUrl(product.Barcode);
     const cartProduct = {
-      id: product.id,
-      sku: product.barcode,
-      name: product.name,
-      description: product.group_code || "",
-      price: product.price || 0,
-      images: [productImage],
-      category: product.group_code || "",
+      id: product.id.toString(),
+      sku: formatBarcode(product.Barcode),
+      name: product.name || "Unknown",
+      description: product.information_taglines || "",
+      price: product.updated_price_website || 0,
+      images: [imageUrl],
+      category: product.categoryLevel1 || "",
       stock: 100,
       inStock: true,
     };
@@ -173,6 +190,10 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
     );
   }
 
+  const imageUrl = getProductImageUrl(product.Barcode);
+  const price = product.updated_price_website || 0;
+  const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -206,40 +227,54 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-16">
             {/* Product Image */}
-            <div className="flex items-center justify-center bg-muted rounded-lg overflow-hidden">
-              {imageLoading ? (
-                <Skeleton className="w-full h-full aspect-square" />
-              ) : (
-                <img
-                  src={productImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.svg";
-                  }}
-                />
-              )}
+            <div className="flex items-center justify-center bg-muted rounded-lg overflow-hidden p-8">
+              <img
+                src={imageUrl}
+                alt={product.name || "Product"}
+                className="w-full h-full object-contain max-h-[500px]"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                }}
+              />
             </div>
 
             {/* Product Details */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name}</h1>
-                <p className="text-muted-foreground">{product.barcode}</p>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name || "Unknown Product"}</h1>
+                <p className="text-muted-foreground">Barcode: {formatBarcode(product.Barcode)}</p>
               </div>
 
               <div className="flex items-center gap-4">
                 <span className="text-4xl font-bold text-primary">
-                  £{(product.price || 0).toFixed(2)}
+                  £{price.toFixed(2)}
                 </span>
                 <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">
                   In Stock
                 </span>
               </div>
 
-              <p className="text-muted-foreground text-lg">
-                {product.group_code}
-              </p>
+              {taglines.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {taglines.map((tag, i) => (
+                    <span key={i} className="text-sm bg-muted px-3 py-1 rounded-full text-muted-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Category Path */}
+              <div className="text-sm text-muted-foreground">
+                {product.categoryLevel1 && (
+                  <p>
+                    <span className="font-medium">Category:</span>{" "}
+                    {[product.categoryLevel1, product.categoryLevel2, product.categoryLevel3, product.categoryLevel4]
+                      .filter(Boolean)
+                      .join(" > ")}
+                  </p>
+                )}
+              </div>
 
               <div className="space-y-4 pt-4 border-t border-border">
                 <div>

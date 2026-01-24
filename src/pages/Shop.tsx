@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link, useNavigate, useParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -15,48 +15,91 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown } from "lucide-react";
-import { useProducts, DbProduct } from "@/hooks/useProducts";
-import { useProductImage } from "@/hooks/useProductImage";
-import { useCart } from "@/context/CartContext";
+import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown, ShoppingCart } from "lucide-react";
+import { useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
 import { toast } from "sonner";
 import { categories } from "@/data/mockData";
-import { 
-  getCategorySlugFromGroupCode, 
-  buildCategoryPath,
-  getSubcategories,
-  getRootCategories,
-  getCategoryBySlug,
-  getAllDescendantSlugs,
-  getCategoryById,
-} from "@/utils/categoryMapping";
-import { buildProductPath } from "@/utils/productRoutes";
-import { categorizeProduct } from "@/utils/productCategorizer";
+import { useCart } from "@/context/CartContext";
 
-// Product Card component with API-fetched image
-const ShopProductCard = ({ product }: { product: DbProduct }) => {
-  const { addItem } = useCart();
-  const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
-  const categorySlug = getCategorySlugFromGroupCode(product.group_code);
+// Helper functions for category navigation
+const getCategoryBySlug = (slug: string) => categories.find(c => c.slug === slug);
+const getSubcategories = (parentId: string) => categories.filter(c => c.parentId === parentId);
+const getRootCategories = () => categories.filter(c => !c.parentId);
+
+const getAllDescendantSlugs = (categoryId: string): string[] => {
+  const cat = categories.find(c => c.id === categoryId);
+  if (!cat) return [];
+  const slugs = [cat.slug];
+  const children = categories.filter(c => c.parentId === categoryId);
+  children.forEach(child => {
+    slugs.push(...getAllDescendantSlugs(child.id));
+  });
+  return slugs;
+};
+
+const getAllDescendantNames = (categoryId: string): string[] => {
+  const cat = categories.find(c => c.id === categoryId);
+  if (!cat) return [];
+  const names = [cat.name];
+  const children = categories.filter(c => c.parentId === categoryId);
+  children.forEach(child => {
+    names.push(...getAllDescendantNames(child.id));
+  });
+  return names;
+};
+
+const buildCategoryPath = (slug: string): string => {
+  const cat = getCategoryBySlug(slug);
+  if (!cat) return "/shop";
   
-  const productPath = buildProductPath({
-    id: product.id,
-    category: categorySlug,
-    subcategory: product.group_code,
-    name: product.name,
-    price: product.price,
-    barcode: product.barcode,
-  } as any);
+  const chain: string[] = [];
+  let current = cat;
+  
+  while (current) {
+    chain.unshift(current.slug);
+    if (current.parentId) {
+      current = categories.find(c => c.id === current.parentId);
+    } else {
+      break;
+    }
+  }
+  
+  return `/shop/${chain.join("/")}`;
+};
+
+// Format barcode properly (handle scientific notation)
+const formatBarcode = (barcode: number | null): string => {
+  if (!barcode) return "";
+  return barcode.toLocaleString("fullwide", { useGrouping: false });
+};
+
+// Get Open Food Facts image URL
+const getProductImageUrl = (barcode: number | null): string => {
+  if (!barcode) return "/placeholder.svg";
+  const barcodeStr = formatBarcode(barcode);
+  
+  if (barcodeStr.length >= 13) {
+    return `https://images.openfoodfacts.org/images/products/${barcodeStr.slice(0, 3)}/${barcodeStr.slice(3, 6)}/${barcodeStr.slice(6, 9)}/${barcodeStr.slice(9)}/front_en.3.400.jpg`;
+  }
+  return `https://images.openfoodfacts.org/images/products/${barcodeStr}/front_en.3.400.jpg`;
+};
+
+// Product Card component
+const ShopProductCard = ({ product }: { product: ProductWithCategory }) => {
+  const { addItem } = useCart();
+  const imageUrl = getProductImageUrl(product.Barcode);
+  const price = product.updated_price_website || 0;
+  const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
 
   const handleAddToCart = () => {
     const cartProduct = {
-      id: product.id,
-      sku: product.barcode,
-      name: product.name,
-      description: product.group_code || "",
-      price: product.price || 0,
+      id: product.id.toString(),
+      sku: formatBarcode(product.Barcode),
+      name: product.name || "Unknown",
+      description: product.information_taglines || "",
+      price: price,
       images: [imageUrl],
-      category: product.group_code || "",
+      category: product.categoryLevel1 || "",
       stock: 100,
       inStock: true,
     };
@@ -66,43 +109,44 @@ const ShopProductCard = ({ product }: { product: DbProduct }) => {
 
   return (
     <div className="group bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
-      <Link to={productPath} className="block">
+      <Link to={`/shop/product/${product.id}`} className="block">
         <div className="aspect-square bg-muted relative overflow-hidden">
-          {imageLoading ? (
-            <Skeleton className="w-full h-full" />
-          ) : (
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder.svg";
-              }}
-            />
-          )}
+          <img
+            src={imageUrl}
+            alt={product.name || "Product"}
+            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }}
+          />
         </div>
       </Link>
       <div className="p-4">
-        <Link to={productPath}>
+        <Link to={`/shop/product/${product.id}`}>
           <h3 className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors mb-1">
-            {product.name}
+            {product.name || "Unknown Product"}
           </h3>
         </Link>
-        <p className="text-xs text-muted-foreground mb-2">{product.barcode}</p>
-        {categorySlug && (
-          <Link
-            to={buildCategoryPath(categorySlug)}
-            className="text-xs text-primary hover:underline"
-          >
-            {product.group_code}
-          </Link>
+        <p className="text-xs text-muted-foreground mb-2">{formatBarcode(product.Barcode)}</p>
+        {taglines.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {taglines.slice(0, 2).map((tag, i) => (
+              <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        {product.categoryLevel1 && (
+          <p className="text-xs text-primary mb-2">{product.categoryLevel1}</p>
         )}
         <div className="flex items-center justify-between mt-3">
           <span className="text-lg font-bold text-primary">
-            £{(product.price || 0).toFixed(2)}
+            £{price.toFixed(2)}
           </span>
           <Button size="sm" onClick={handleAddToCart}>
-            Add to Cart
+            <ShoppingCart className="h-4 w-4 mr-1" />
+            Add
           </Button>
         </div>
       </div>
@@ -122,7 +166,7 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
   const [openCategories, setOpenCategories] = useState<string[]>([]);
-  const itemsPerPage = 20; // Changed from 32 to 20 (4 columns × 5 rows)
+  const itemsPerPage = 20;
 
   // Parse category from URL path
   const pathParts = fullPath?.split("/").filter(Boolean) || [];
@@ -133,26 +177,24 @@ const Shop = () => {
     selectedCategory = getCategoryBySlug(lastPart);
   }
 
-  // Fetch all products from Supabase
-  const { data: products = [], isLoading: productsLoading } = useProducts({
-    search: searchQuery || undefined,
-  });
+  // Get category name for query
+  const categoryNameForQuery = selectedCategory ? selectedCategory.name : null;
 
-  // Filter products by category if selected
+  // Fetch products from newProducts table with latestCategories
+  const { data: products = [], isLoading: productsLoading } = useProductsByCategory(
+    categoryNameForQuery,
+    500
+  );
+
+  // Filter products by search query
   const filteredProducts = useMemo(() => {
-    if (!selectedCategory) {
-      return products;
-    }
-
-    // Get all descendant slugs for this category
-    const descendantSlugs = getAllDescendantSlugs(selectedCategory.id);
-    
-    // Filter products that match this category or any of its descendants
-    return products.filter((p) => {
-      const productCategorySlug = categorizeProduct(p.name);
-      return descendantSlugs.includes(productCategorySlug);
-    });
-  }, [products, selectedCategory]);
+    if (!searchQuery) return products;
+    const query = searchQuery.toLowerCase();
+    return products.filter(p => 
+      p.name?.toLowerCase().includes(query) ||
+      formatBarcode(p.Barcode).includes(query)
+    );
+  }, [products, searchQuery]);
 
   // Update URL params
   const updateParams = (updates: Record<string, string | null>) => {
@@ -176,7 +218,7 @@ const Shop = () => {
   };
 
   const handleCategoryClick = (slug: string) => {
-    setCurrentPage(1); // Reset to page 1 when changing category
+    setCurrentPage(1);
     navigate(buildCategoryPath(slug));
   };
 
@@ -185,11 +227,11 @@ const Shop = () => {
     return [...filteredProducts].sort((a, b) => {
       switch (sortBy) {
         case "price-low":
-          return (a.price || 0) - (b.price || 0);
+          return (a.updated_price_website || 0) - (b.updated_price_website || 0);
         case "price-high":
-          return (b.price || 0) - (a.price || 0);
+          return (b.updated_price_website || 0) - (a.updated_price_website || 0);
         case "name":
-          return a.name.localeCompare(b.name);
+          return (a.name || "").localeCompare(b.name || "");
         default:
           return 0;
       }
@@ -213,20 +255,18 @@ const Shop = () => {
   const getBreadcrumbs = () => {
     const breadcrumbs = [{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }];
     
-    // Extract category path from URL
     const pathParts = location.split('/').filter(Boolean);
     
     if (pathParts.length > 1 && pathParts[0] === 'shop') {
       const categoryParts = pathParts.slice(1);
       
-      // Build breadcrumb for each category level
       let currentPath = '/shop';
       categoryParts.forEach((part) => {
+        if (part === 'product') return;
         currentPath += `/${part}`;
         
-        // Find the category name from slug
         const category = categories.find(c => c.slug === part);
-        const categoryName = category?.name || part.replace(/-/g, ' ').toUpperCase();
+        const categoryName = category?.name || part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         
         breadcrumbs.push({
           name: categoryName,
@@ -251,7 +291,7 @@ const Shop = () => {
                 : "hover:bg-muted"
             }`}
             onClick={() => {
-              setCurrentPage(1); // Reset page
+              setCurrentPage(1);
               navigate("/shop");
             }}
           >
@@ -336,21 +376,64 @@ const Shop = () => {
                           {hasLevel3 && openCategories.includes(subcat.id) && (
                             <div className="ml-5 space-y-0.5">
                               {level3Categories.map((subsubcat) => {
+                                const level4Categories = getSubcategories(subsubcat.id);
+                                const hasLevel4 = level4Categories.length > 0;
                                 const isSubSubSelected = selectedCategory?.id === subsubcat.id;
+                                const subSubDescendantSlugs = getAllDescendantSlugs(subsubcat.id);
+                                const isSubSubChildSelected = selectedCategory && subSubDescendantSlugs.includes(selectedCategory.slug);
+
                                 return (
-                                  <div
-                                    key={subsubcat.id}
-                                    className={`flex items-center py-1 px-2 ml-3 rounded cursor-pointer transition-colors ${
-                                      isSubSubSelected
-                                        ? "bg-primary/10 text-primary"
-                                        : "hover:bg-muted"
-                                    }`}
-                                    onClick={() => handleCategoryClick(subsubcat.slug)}
-                                  >
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isSubSubSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
-                                    <span className="text-sm text-muted-foreground ml-2">
-                                      {subsubcat.name}
-                                    </span>
+                                  <div key={subsubcat.id} className="space-y-0.5">
+                                    <div
+                                      className={`flex items-center py-1 px-2 ml-3 rounded cursor-pointer transition-colors ${
+                                        isSubSubSelected || isSubSubChildSelected
+                                          ? "bg-primary/10 text-primary"
+                                          : "hover:bg-muted"
+                                      }`}
+                                      onClick={() => {
+                                        handleCategoryClick(subsubcat.slug);
+                                        if (hasLevel4) toggleCategory(subsubcat.id);
+                                      }}
+                                    >
+                                      <div className={`w-1.5 h-1.5 rounded-full ${isSubSubSelected || isSubSubChildSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                                      <span className="text-sm text-muted-foreground ml-2 flex-1">
+                                        {subsubcat.name}
+                                      </span>
+                                      {hasLevel4 && (
+                                        <div className="ml-auto">
+                                          {openCategories.includes(subsubcat.id) ? (
+                                            <ChevronDown className="h-3 w-3" />
+                                          ) : (
+                                            <ChevronRight className="h-3 w-3" />
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Level 4 */}
+                                    {hasLevel4 && openCategories.includes(subsubcat.id) && (
+                                      <div className="ml-8 space-y-0.5">
+                                        {level4Categories.map((level4cat) => {
+                                          const isLevel4Selected = selectedCategory?.id === level4cat.id;
+                                          return (
+                                            <div
+                                              key={level4cat.id}
+                                              className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
+                                                isLevel4Selected
+                                                  ? "bg-primary/10 text-primary"
+                                                  : "hover:bg-muted"
+                                              }`}
+                                              onClick={() => handleCategoryClick(level4cat.slug)}
+                                            >
+                                              <div className={`w-1 h-1 rounded-full ${isLevel4Selected ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                                              <span className="text-sm text-muted-foreground ml-2">
+                                                {level4cat.name}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -543,7 +626,7 @@ const Shop = () => {
                     </div>
                   )}
 
-                  {/* Pagination - Show for all cases when totalPages > 1 */}
+                  {/* Pagination */}
                   {totalPages > 1 && sortedProducts.length > 0 && (
                     <div className="mt-12 space-y-4">
                       <div className="text-center text-sm text-muted-foreground">
