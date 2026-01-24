@@ -101,14 +101,14 @@ const ShopProductCard = ({ product }: { product: ProductWithCategory }) => {
   };
 
   return (
-    <div className="group bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-all">
+    <div className="group bg-card rounded-lg border overflow-hidden hover:shadow-lg transition-all">
       <Link to={`/shop/product/${product.id}`} className="block">
-        <div className="aspect-square bg-muted relative overflow-hidden">
+        <div className="aspect-square relative overflow-hidden">
           <img
             src={imageUrl}
             alt={product.name || "Product"}
             loading="lazy"
-            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/placeholder.svg";
             }}
@@ -374,7 +374,7 @@ const Shop = () => {
                       return (
                         <div key={subcat.id} className="space-y-0.5">
                           <div
-                            className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
+                            className={`flex items-center cursor-pointer transition-colors ${
                               isSubSelected || isSubChildSelected
                                 ? "bg-primary/10 text-primary"
                                 : "hover:bg-muted"
