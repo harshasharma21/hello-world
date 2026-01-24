@@ -28,7 +28,7 @@ export const useNewProducts = (options: UseNewProductsOptions = {}) => {
 
   return useQuery({
     queryKey: ["newProducts", categoryName, searchQuery, limit, offset],
-    queryFn: async (): Promise<ProductWithCategory[]> => {
+    queryFn: async (): Promise<{ items: ProductWithCategory[]; total: number }> => {
       // Join newProducts with latestCategories on Product Name
       let query = supabase
         .from("newProducts")
@@ -110,7 +110,7 @@ export const useNewProducts = (options: UseNewProductsOptions = {}) => {
         };
       });
 
-      // Filter by category if specified
+      // Filter by category if specified (client-side filtering of this page)
       if (categoryName) {
         const normalizedCategoryName = categoryName.trim().toLowerCase();
         productsWithCategories = productsWithCategories.filter(product => {
@@ -126,7 +126,9 @@ export const useNewProducts = (options: UseNewProductsOptions = {}) => {
         });
       }
 
-      return productsWithCategories;
+      // For this hook we return items + a total placeholder (total is best-effort)
+      // Total will be determined by separate count queries in useProductsByCategory below when needed.
+      return { items: productsWithCategories, total: productsWithCategories.length };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -195,12 +197,112 @@ export const useNewProduct = (productId: number | null) => {
 };
 
 // Hook to get products by category with all descendants
-export const useProductsByCategory = (categoryName: string | null, limit = 50) => {
+export const useProductsByCategory = (categoryName: string | null, limit = 50, offset = 0) => {
   return useQuery({
-    queryKey: ["productsByCategory", categoryName, limit],
-    queryFn: async (): Promise<ProductWithCategory[]> => {
-      // Get products from newProducts table
-      const { data: products, error } = await supabase
+    queryKey: ["productsByCategory", categoryName, limit, offset],
+    queryFn: async (): Promise<{ items: ProductWithCategory[]; total: number }> => {
+      // If a category name is provided, find matching product names from latestCategories (query per level)
+      if (categoryName) {
+        const normalized = categoryName.trim();
+        const levels = [
+          "Category Level 1",
+          "Category Level 2",
+          "Category Level 3",
+          "Category Level 4",
+        ];
+
+        // Build a single OR filter to run on latestCategories so we can page results there
+        // This avoids building a giant `.in(...)` array in the newProducts request.
+        const orConditions = levels
+          .map((l) => `"${l}".ilike.%${normalized}%`)
+          .join(",");
+
+        // Get total matching rows (best-effort). This counts matching latestCategories rows;
+        // if your latestCategories table has one row per product this is exact.
+        const countRes = await supabase
+          .from("latestCategories")
+          .select("\"Product Name\"", { head: true, count: "exact" })
+          .or(orConditions);
+        const total = countRes.count || 0;
+
+        if (total === 0) return { items: [], total };
+
+        // Fetch a page of product names directly from latestCategories using the same OR filter.
+        const namesRes = await supabase
+          .from("latestCategories")
+          .select(`"Product Name"`)
+          .or(orConditions)
+          .range(offset, offset + limit - 1);
+
+        if (namesRes.error) {
+          console.error("Error fetching product names from latestCategories:", namesRes.error);
+          throw namesRes.error;
+        }
+
+        const matchingNames = (namesRes.data || []).map((d: any) => d["Product Name"]).filter(Boolean);
+        if (matchingNames.length === 0) return { items: [], total };
+
+        // Now fetch the actual product records for this small page of names
+        let productsQuery: any = supabase
+          .from("newProducts")
+          .select(`
+            id,
+            name,
+            Barcode,
+            information_taglines,
+            updated_price_website
+          `)
+          .in("name", matchingNames);
+
+        const { data: products, error: productsError } = await productsQuery;
+        if (productsError) {
+          console.error("Error fetching products:", productsError);
+          throw productsError;
+        }
+
+        // Fetch category mappings for this page of matching names
+        const { data: categories } = await supabase
+          .from("latestCategories")
+          .select(`
+            "Product Name",
+            "Category Level 1",
+            "Category Level 2",
+            "Category Level 3",
+            "Category Level 4"
+          `)
+          .in("Product Name", matchingNames);
+
+        const categoryMap = new Map<string, { level1: string | null; level2: string | null; level3: string | null; level4: string | null }>();
+        (categories || []).forEach((cat: any) => {
+          if (cat["Product Name"]) {
+            categoryMap.set(cat["Product Name"], {
+              level1: cat["Category Level 1"] || null,
+              level2: cat["Category Level 2"] || null,
+              level3: cat["Category Level 3"] || null,
+              level4: cat["Category Level 4"] || null,
+            });
+          }
+        });
+
+        const items = (products || []).map((p: any) => ({
+          ...p,
+          categoryLevel1: categoryMap.get(p.name)?.level1 || null,
+          categoryLevel2: categoryMap.get(p.name)?.level2 || null,
+          categoryLevel3: categoryMap.get(p.name)?.level3 || null,
+          categoryLevel4: categoryMap.get(p.name)?.level4 || null,
+        }));
+
+        return { items, total };
+      }
+
+      // No category filter: fetch paginated products and total count
+      const countRes = await supabase
+        .from("newProducts")
+        .select("id", { count: "exact", head: true })
+        .not("name", "is", null);
+      const total = countRes.count || 0;
+
+      let query: any = supabase
         .from("newProducts")
         .select(`
           id,
@@ -210,19 +312,18 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
           updated_price_website
         `)
         .not("name", "is", null)
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
+      const { data: products, error } = await query;
       if (error) {
         console.error("Error fetching products:", error);
         throw error;
       }
 
-      if (!products || products.length === 0) {
-        return [];
-      }
+      if (!products || products.length === 0) return { items: [], total };
 
-      // Get all category mappings
-      const productNames = products.map(p => p.name).filter(Boolean);
+      // Fetch category mappings for these products
+      const productNames = products.map((p: any) => p.name).filter(Boolean);
       const { data: categories } = await supabase
         .from("latestCategories")
         .select(`
@@ -234,19 +335,19 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
         `)
         .in("Product Name", productNames);
 
-      const categoryMap = new Map();
-      categories?.forEach(cat => {
+      const categoryMap = new Map<string, { level1: string | null; level2: string | null; level3: string | null; level4: string | null }>();
+      (categories || []).forEach((cat: any) => {
         if (cat["Product Name"]) {
           categoryMap.set(cat["Product Name"], {
-            level1: cat["Category Level 1"],
-            level2: cat["Category Level 2"],
-            level3: cat["Category Level 3"],
-            level4: cat["Category Level 4"],
+            level1: cat["Category Level 1"] || null,
+            level2: cat["Category Level 2"] || null,
+            level3: cat["Category Level 3"] || null,
+            level4: cat["Category Level 4"] || null,
           });
         }
       });
 
-      let result = (products || []).map(p => ({
+      const items = (products || []).map((p: any) => ({
         ...p,
         categoryLevel1: categoryMap.get(p.name)?.level1 || null,
         categoryLevel2: categoryMap.get(p.name)?.level2 || null,
@@ -254,23 +355,7 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50) =
         categoryLevel4: categoryMap.get(p.name)?.level4 || null,
       }));
 
-      // Filter by category if specified
-      if (categoryName) {
-        const normalizedCategoryName = categoryName.trim().toLowerCase();
-        result = result.filter(product => {
-          const levels = [
-            product.categoryLevel1,
-            product.categoryLevel2,
-            product.categoryLevel3,
-            product.categoryLevel4,
-          ];
-          return levels.some(
-            level => level && level.trim().toLowerCase() === normalizedCategoryName
-          );
-        });
-      }
-
-      return result;
+      return { items, total };
     },
     staleTime: 5 * 60 * 1000,
   });

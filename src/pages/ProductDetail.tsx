@@ -37,6 +37,7 @@ const RelatedProductCard = ({ product }: { product: ProductWithCategory }) => {
         <img
           src={imageUrl}
           alt={product.name || "Product"}
+          loading="lazy"
           className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform"
           onError={(e) => {
             (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -75,11 +76,14 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
 
   const { data: product, isLoading } = useNewProduct(id ? parseInt(id, 10) : null);
   
-  // Get related products from same category
-  const { data: relatedProducts = [] } = useProductsByCategory(
+  // Get related products from same category (server-paginated)
+  const { data: relatedPaged = { items: [], total: 0 } } = useProductsByCategory(
     product?.categoryLevel1 || null,
-    5
+    5,
+    0
   );
+
+  const relatedProducts: ProductWithCategory[] = relatedPaged.items || [];
 
   // Filter out current product from related
   const filteredRelated = relatedProducts

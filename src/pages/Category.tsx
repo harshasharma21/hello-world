@@ -58,6 +58,7 @@ const CategoryProductCard = ({ product }: { product: DbProduct }) => {
             <img
               src={imageUrl}
               alt={product.name}
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/placeholder.svg";

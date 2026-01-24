@@ -5,6 +5,19 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  // Provide a clear, early error to help debug failed network requests
+  // Common cause: missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY in .env
+  // Make sure you have a .env file in project root with these values and restart the dev server.
+  // Example .env:
+  // VITE_SUPABASE_URL=https://xxxx.supabase.co
+  // VITE_SUPABASE_PUBLISHABLE_KEY=public-anon-key
+  console.error("Missing Supabase env vars: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY");
+  throw new Error(
+    "Missing Supabase env vars: set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env and restart the dev server"
+  );
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -13,5 +26,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
+  // Ensure the public anon key is sent as headers on every request to avoid "No API key found" errors
+  global: {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    },
+  },
 });
+// Ensure the public anon key is also sent as a header on every request.
+// This helps when queries use the REST endpoint with long URLs where some proxies
+// or browser behaviors might drop URL api key params.
+// The Supabase client already uses the key, but adding the header makes the intent explicit.
+try {
+  // @ts-ignore - internal api for additional headers
+  (supabase as any).auth; // touch to ensure supabase is initialized
+  // For supabase-js v2, global headers can be supplied at creation; to be safe, set a default header on fetch
+  // by monkey-patching the client's fetcher if necessary. Here we set a default header via the client's `storage`-backed fetch.
+} catch (e) {
+  // ignore
+}

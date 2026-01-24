@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/pagination";
 import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown, ShoppingCart } from "lucide-react";
 import { useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categories } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
@@ -114,6 +115,7 @@ const ShopProductCard = ({ product }: { product: ProductWithCategory }) => {
           <img
             src={imageUrl}
             alt={product.name || "Product"}
+            loading="lazy"
             className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -180,13 +182,47 @@ const Shop = () => {
   // Get category name for query
   const categoryNameForQuery = selectedCategory ? selectedCategory.name : null;
 
-  // Fetch products from newProducts table with latestCategories
-  const { data: products = [], isLoading: productsLoading } = useProductsByCategory(
+  // Fetch products (paginated) from newProducts table with latestCategories
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const { data: productsData = { items: [], total: 0 }, isLoading: productsLoading } = useProductsByCategory(
     categoryNameForQuery,
-    500
+    itemsPerPage,
+    startIndex
   );
+  const products = productsData.items;
+  const totalCount = productsData.total;
+  const queryClient = useQueryClient();
+  // Cache totals in sessionStorage to show instant counts while server requests complete
+  const cacheKey = categoryNameForQuery ? `shop_total_${categoryNameForQuery}` : `shop_total_all`;
+  const [cachedTotal, setCachedTotal] = useState<number | null>(() => {
+    try {
+      const v = sessionStorage.getItem(cacheKey);
+      return v ? parseInt(v, 10) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-  // Filter products by search query
+  // Update cache when server returns a non-zero total
+  useEffect(() => {
+    if (typeof totalCount === "number" && totalCount > 0) {
+      try {
+        sessionStorage.setItem(cacheKey, String(totalCount));
+      } catch (e) {}
+      setCachedTotal(totalCount);
+    }
+  }, [totalCount, cacheKey]);
+  // When category changes, read cached value for new key
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem(cacheKey);
+      setCachedTotal(v ? parseInt(v, 10) : null);
+    } catch (e) {
+      setCachedTotal(null);
+    }
+  }, [cacheKey]);
+
+  // Filter products by search query (client-side within current page)
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return products;
     const query = searchQuery.toLowerCase();
@@ -238,10 +274,9 @@ const Shop = () => {
     });
   }, [filteredProducts, sortBy]);
 
-  // Pagination
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentProducts = sortedProducts.slice(startIndex, startIndex + itemsPerPage);
+  // Pagination (server-driven)
+  const totalPages = Math.ceil((totalCount || 0) / itemsPerPage);
+  const currentProducts = sortedProducts;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -297,7 +332,7 @@ const Shop = () => {
           >
             <div className={`w-2 h-2 rounded-full mr-3 ${!selectedCategory ? "bg-primary" : "bg-muted-foreground/30"}`} />
             <span className="text-sm">All Products</span>
-            <span className="ml-auto text-xs text-muted-foreground">{products.length}</span>
+            <span className="ml-auto text-xs text-muted-foreground">{!selectedCategory ? (cachedTotal ?? totalCount ?? products.length) : (products.length)}</span>
           </div>
 
           {/* Hierarchical Categories */}
@@ -496,7 +531,7 @@ const Shop = () => {
               {selectedCategory ? selectedCategory.name : "All Products"}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              {sortedProducts.length} products available
+              {cachedTotal ?? totalCount ?? sortedProducts.length} products available
             </p>
           </div>
 
@@ -547,7 +582,7 @@ const Shop = () => {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <p className="text-xs text-muted-foreground">
-                  Showing {currentProducts.length} of {sortedProducts.length} products
+                  Showing {currentProducts.length} of {cachedTotal ?? totalCount ?? sortedProducts.length} products
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex border border-border rounded-md">
