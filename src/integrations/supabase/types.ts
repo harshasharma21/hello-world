@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -49,17 +49,233 @@ export type Database = {
           },
         ]
       }
+      latestCategories: {
+        Row: {
+          "Category Level 1": string | null
+          "Category Level 2": string | null
+          "Category Level 3": string | null
+          "Category Level 4": string | null
+          "Original Subcategory": string | null
+          "Product Name": string | null
+        }
+        Insert: {
+          "Category Level 1"?: string | null
+          "Category Level 2"?: string | null
+          "Category Level 3"?: string | null
+          "Category Level 4"?: string | null
+          "Original Subcategory"?: string | null
+          "Product Name"?: string | null
+        }
+        Update: {
+          "Category Level 1"?: string | null
+          "Category Level 2"?: string | null
+          "Category Level 3"?: string | null
+          "Category Level 4"?: string | null
+          "Original Subcategory"?: string | null
+          "Product Name"?: string | null
+        }
+        Relationships: []
+      }
+      newCategories: {
+        Row: {
+          Barcode: number | null
+          groupcode: string | null
+          name: string | null
+          price_amount: string | null
+          subcategory: string | null
+        }
+        Insert: {
+          Barcode?: number | null
+          groupcode?: string | null
+          name?: string | null
+          price_amount?: string | null
+          subcategory?: string | null
+        }
+        Update: {
+          Barcode?: number | null
+          groupcode?: string | null
+          name?: string | null
+          price_amount?: string | null
+          subcategory?: string | null
+        }
+        Relationships: []
+      }
+      newCategoriesNew: {
+        Row: {
+          "Category Level 1": string | null
+          "Category Level 2": string | null
+          "Category Level 3": string | null
+          "Category Level 4": string | null
+          "Original Subcategory": string | null
+          "Product Name": string | null
+        }
+        Insert: {
+          "Category Level 1"?: string | null
+          "Category Level 2"?: string | null
+          "Category Level 3"?: string | null
+          "Category Level 4"?: string | null
+          "Original Subcategory"?: string | null
+          "Product Name"?: string | null
+        }
+        Update: {
+          "Category Level 1"?: string | null
+          "Category Level 2"?: string | null
+          "Category Level 3"?: string | null
+          "Category Level 4"?: string | null
+          "Original Subcategory"?: string | null
+          "Product Name"?: string | null
+        }
+        Relationships: []
+      }
+      newProducts: {
+        Row: {
+          Barcode: number | null
+          id: number
+          information_taglines: string | null
+          name: string | null
+          updated_price_website: number | null
+        }
+        Insert: {
+          Barcode?: number | null
+          id?: number
+          information_taglines?: string | null
+          name?: string | null
+          updated_price_website?: number | null
+        }
+        Update: {
+          Barcode?: number | null
+          id?: number
+          information_taglines?: string | null
+          name?: string | null
+          updated_price_website?: number | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string
           base_unit: string | null
           category_id: string | null
           created_at: string
+          description: string | null
           group_code: string | null
           id: string
           is_valid_barcode: boolean | null
           name: string
           price: number | null
+          seo_url: string | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -67,11 +283,14 @@ export type Database = {
           base_unit?: string | null
           category_id?: string | null
           created_at?: string
+          description?: string | null
           group_code?: string | null
           id?: string
           is_valid_barcode?: boolean | null
           name: string
           price?: number | null
+          seo_url?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -79,11 +298,14 @@ export type Database = {
           base_unit?: string | null
           category_id?: string | null
           created_at?: string
+          description?: string | null
           group_code?: string | null
           id?: string
           is_valid_barcode?: boolean | null
           name?: string
           price?: number | null
+          seo_url?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -96,15 +318,76 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_product_image_url: { Args: { barcode: string }; Returns: string }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -231,6 +514,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "customer"],
+    },
   },
 } as const
