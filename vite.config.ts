@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     host: true,
     port: 5173,
     allowedHosts: [
-    "kind-connect-f9mp.onrender.com",
+    "hello-world-svc7.onrender.com",
     ],
   },
   plugins: [
