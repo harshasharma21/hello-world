@@ -55,6 +55,7 @@ export type Database = {
           "Category Level 2": string | null
           "Category Level 3": string | null
           "Category Level 4": string | null
+          id: number
           "Original Subcategory": string | null
           "Product Name": string | null
         }
@@ -63,6 +64,7 @@ export type Database = {
           "Category Level 2"?: string | null
           "Category Level 3"?: string | null
           "Category Level 4"?: string | null
+          id?: number
           "Original Subcategory"?: string | null
           "Product Name"?: string | null
         }
@@ -71,6 +73,7 @@ export type Database = {
           "Category Level 2"?: string | null
           "Category Level 3"?: string | null
           "Category Level 4"?: string | null
+          id?: number
           "Original Subcategory"?: string | null
           "Product Name"?: string | null
         }

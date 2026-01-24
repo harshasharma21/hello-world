@@ -29,6 +29,14 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const price = product.updated_price_website || 0;
   const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
 
+  // Build category breadcrumb for display
+  const categoryPath = [
+    product.categoryLevel1,
+    product.categoryLevel2,
+    product.categoryLevel3,
+    product.categoryLevel4,
+  ].filter(Boolean).join(" › ");
+
   return (
     <Link
       to={`/shop/product/${product.id}`}
@@ -45,9 +53,14 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         />
       </div>
       <div className="p-4">
-        <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors mb-2">
+        <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors mb-1">
           {product.name || "Unknown Product"}
         </h3>
+        {categoryPath && (
+          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+            {categoryPath}
+          </p>
+        )}
         {taglines.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {taglines.slice(0, 2).map((tag, i) => (
