@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus, HelpCircle, Upload as UploadIcon } from "lucide-react";
 import { toast } from "sonner";
-import { mockProducts } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/types/product";
+
+// Type for newProducts from DB
+interface DbNewProduct {
+  id: number;
+  name: string | null;
+  Barcode: number | null;
+  information_taglines: string | null;
+  updated_price_website: number | null;
+}
 
 interface OrderRow {
   id: string;
@@ -20,8 +28,25 @@ interface OrderRow {
   price: number;
 }
 
+// Convert DB product to Product type
+const convertToProduct = (dbProduct: DbNewProduct): Product => {
+  const barcode = dbProduct.Barcode?.toLocaleString("fullwide", { useGrouping: false }) || "";
+  return {
+    id: dbProduct.id.toString(),
+    sku: barcode,
+    name: dbProduct.name || "Unknown",
+    description: dbProduct.information_taglines || "",
+    price: dbProduct.updated_price_website || 0,
+    images: ["/placeholder.svg"],
+    category: "",
+    stock: 100,
+    inStock: true,
+  };
+};
+
 const FastOrder = () => {
   const { addItem } = useCart();
+  const [products, setProducts] = useState<DbNewProduct[]>([]);
   const [orderRows, setOrderRows] = useState<OrderRow[]>(() => 
     Array.from({ length: 10 }, (_, i) => ({
       id: `row-${i}`,
@@ -34,6 +59,26 @@ const FastOrder = () => {
   const [pasteText, setPasteText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Fetch products from newProducts table
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("newProducts")
+        .select("*")
+        .not("name", "is", null)
+        .limit(1000);
+      
+      if (error) {
+        console.error("Error fetching products:", error);
+        return;
+      }
+      
+      setProducts(data || []);
+    };
+    
+    fetchProducts();
+  }, []);
+
   const updateRow = (id: string, field: keyof OrderRow, value: any) => {
     setOrderRows(prev => prev.map(row => {
       if (row.id !== id) return row;
@@ -42,11 +87,14 @@ const FastOrder = () => {
       
       // Auto-search and select product when search term changes
       if (field === 'searchTerm' && value) {
-        const product = mockProducts.find(p => 
-          p.sku.toLowerCase().includes(value.toLowerCase()) ||
-          p.name.toLowerCase().includes(value.toLowerCase())
-        );
-        if (product) {
+        const barcode = value.replace(/\D/g, '');
+        const dbProduct = products.find(p => {
+          const productBarcode = p.Barcode?.toLocaleString("fullwide", { useGrouping: false }) || "";
+          return productBarcode.includes(barcode) ||
+            (p.name && p.name.toLowerCase().includes(value.toLowerCase()));
+        });
+        if (dbProduct) {
+          const product = convertToProduct(dbProduct);
           updated.selectedProduct = product;
           updated.price = product.price * (updated.quantity || 1);
         }
@@ -128,11 +176,14 @@ const FastOrder = () => {
       if (error) throw error;
 
       const parsedItems = (data.items || []).map((item: { sku: string; quantity: number }) => {
-        const product = mockProducts.find(p => p.sku === item.sku);
+        const dbProduct = products.find(p => {
+          const barcode = p.Barcode?.toLocaleString("fullwide", { useGrouping: false }) || "";
+          return barcode === item.sku;
+        });
         return {
           sku: item.sku,
           quantity: item.quantity,
-          product
+          product: dbProduct ? convertToProduct(dbProduct) : null
         };
       });
 
