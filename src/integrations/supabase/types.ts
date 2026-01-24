@@ -134,6 +134,7 @@ export type Database = {
         Row: {
           Barcode: number | null
           id: number
+          image_url: string | null
           information_taglines: string | null
           name: string | null
           updated_price_website: number | null
@@ -141,6 +142,7 @@ export type Database = {
         Insert: {
           Barcode?: number | null
           id?: number
+          image_url?: string | null
           information_taglines?: string | null
           name?: string | null
           updated_price_website?: number | null
@@ -148,6 +150,7 @@ export type Database = {
         Update: {
           Barcode?: number | null
           id?: number
+          image_url?: string | null
           information_taglines?: string | null
           name?: string | null
           updated_price_website?: number | null
