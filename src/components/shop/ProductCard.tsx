@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { ProductWithCategory } from "@/hooks/useNewProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 
 interface ProductCardProps {
   product: ProductWithCategory;
@@ -13,19 +14,10 @@ const formatBarcode = (barcode: number | null): string => {
   return barcode.toLocaleString("fullwide", { useGrouping: false });
 };
 
-// Get Open Food Facts image URL
-const getProductImageUrl = (barcode: number | null): string => {
-  if (!barcode) return "/placeholder.svg";
-  const barcodeStr = formatBarcode(barcode);
-  
-  if (barcodeStr.length >= 13) {
-    return `https://images.openfoodfacts.org/images/products/${barcodeStr.slice(0, 3)}/${barcodeStr.slice(3, 6)}/${barcodeStr.slice(6, 9)}/${barcodeStr.slice(9)}/front_en.3.400.jpg`;
-  }
-  return `https://images.openfoodfacts.org/images/products/${barcodeStr}/front_en.3.400.jpg`;
-};
+// Product image comes from `newProducts.image_url` via useProductImage
 
 export const ProductCard = ({ product }: ProductCardProps) => {
-  const imageUrl = getProductImageUrl(product.Barcode);
+  const { imageUrl } = useProductImage(formatBarcode(product.Barcode));
   const price = product.updated_price_website || 0;
   const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
 

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/pagination";
 import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown, ShoppingCart } from "lucide-react";
 import { useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categories } from "@/data/mockData";
@@ -74,21 +75,12 @@ const formatBarcode = (barcode: number | null): string => {
   return barcode.toLocaleString("fullwide", { useGrouping: false });
 };
 
-// Get Open Food Facts image URL
-const getProductImageUrl = (barcode: number | null): string => {
-  if (!barcode) return "/placeholder.svg";
-  const barcodeStr = formatBarcode(barcode);
-  
-  if (barcodeStr.length >= 13) {
-    return `https://images.openfoodfacts.org/images/products/${barcodeStr.slice(0, 3)}/${barcodeStr.slice(3, 6)}/${barcodeStr.slice(6, 9)}/${barcodeStr.slice(9)}/front_en.3.400.jpg`;
-  }
-  return `https://images.openfoodfacts.org/images/products/${barcodeStr}/front_en.3.400.jpg`;
-};
+
 
 // Product Card component
 const ShopProductCard = ({ product }: { product: ProductWithCategory }) => {
   const { addItem } = useCart();
-  const imageUrl = getProductImageUrl(product.Barcode);
+  const { imageUrl } = useProductImage(formatBarcode(product.Barcode));
   const price = product.updated_price_website || 0;
   const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
 
@@ -332,7 +324,7 @@ const Shop = () => {
           >
             <div className={`w-2 h-2 rounded-full mr-3 ${!selectedCategory ? "bg-primary" : "bg-muted-foreground/30"}`} />
             <span className="text-sm">All Products</span>
-            <span className="ml-auto text-xs text-muted-foreground">{!selectedCategory ? (cachedTotal ?? totalCount ?? products.length) : (products.length)}</span>
+            {/* <span className="ml-auto text-xs text-muted-foreground">{!selectedCategory ? (cachedTotal ?? totalCount ?? products.length) : (products.length)}</span> */}
           </div>
 
           {/* Hierarchical Categories */}

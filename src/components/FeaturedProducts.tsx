@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts, DbProduct } from "@/hooks/useProducts";
+import { fetchProductImage } from "@/hooks/useProductImage";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import {
@@ -10,34 +11,7 @@ import {
   buildProductPath,
 } from "@/utils/categoryMapping";
 
-// Cache for product images from Open Food Facts API
-const imageCache = new Map<string, string>();
-
-// Fetch product image URL from Open Food Facts API
-const fetchProductImage = async (barcode: string): Promise<string> => {
-  // Check cache first
-  if (imageCache.has(barcode)) {
-    return imageCache.get(barcode)!;
-  }
-
-  try {
-    const response = await fetch(
-      `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
-    );
-    const data = await response.json();
-
-    if (data.status === 1 && data.product?.image_url) {
-      const imageUrl = data.product.image_url;
-      imageCache.set(barcode, imageUrl);
-      return imageUrl;
-    }
-  } catch (error) {
-    console.log(`Failed to fetch image for barcode ${barcode}`);
-  }
-
-  // Fallback to placeholder
-  return "/placeholder.svg";
-};
+// Uses `fetchProductImage` from useProductImage which queries `newProducts.image_url`
 
 // Product card with API-fetched image
 const FeaturedProductCard = ({ product }: { product: DbProduct }) => {

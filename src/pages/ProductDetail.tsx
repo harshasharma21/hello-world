@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ShoppingCart, ChevronRight } from "lucide-react";
 import { useNewProduct, useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
+import { useProductImage } from "@/hooks/useProductImage";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { categories } from "@/data/mockData";
@@ -16,20 +17,11 @@ const formatBarcode = (barcode: number | null): string => {
   return barcode.toLocaleString("fullwide", { useGrouping: false });
 };
 
-// Get Open Food Facts image URL
-const getProductImageUrl = (barcode: number | null): string => {
-  if (!barcode) return "/placeholder.svg";
-  const barcodeStr = formatBarcode(barcode);
-  
-  if (barcodeStr.length >= 13) {
-    return `https://images.openfoodfacts.org/images/products/${barcodeStr.slice(0, 3)}/${barcodeStr.slice(3, 6)}/${barcodeStr.slice(6, 9)}/${barcodeStr.slice(9)}/front_en.3.400.jpg`;
-  }
-  return `https://images.openfoodfacts.org/images/products/${barcodeStr}/front_en.3.400.jpg`;
-};
+
 
 // Related product card
 const RelatedProductCard = ({ product }: { product: ProductWithCategory }) => {
-  const imageUrl = getProductImageUrl(product.Barcode);
+  const { imageUrl } = useProductImage(formatBarcode(product.Barcode));
 
   return (
     <Link to={`/shop/product/${product.id}`} className="group">
@@ -76,6 +68,10 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
 
   const { data: product, isLoading } = useNewProduct(id ? parseInt(id, 10) : null);
   
+  const { imageUrl: mainImageUrl, isLoading: mainImageLoading } = useProductImage(
+    formatBarcode(product?.Barcode ?? null as any)
+  );
+
   // Get related products from same category (server-paginated)
   const { data: relatedPaged = { items: [], total: 0 } } = useProductsByCategory(
     product?.categoryLevel1 || null,
@@ -137,14 +133,13 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
   const handleAddToCart = () => {
     if (!product) return;
 
-    const imageUrl = getProductImageUrl(product.Barcode);
     const cartProduct = {
       id: product.id.toString(),
       sku: formatBarcode(product.Barcode),
       name: product.name || "Unknown",
       description: product.information_taglines || "",
       price: product.updated_price_website || 0,
-      images: [imageUrl],
+      images: [mainImageUrl],
       category: product.categoryLevel1 || "",
       stock: 100,
       inStock: true,
@@ -194,7 +189,7 @@ const ProductDetail = ({ productId }: ProductDetailProps) => {
     );
   }
 
-  const imageUrl = getProductImageUrl(product.Barcode);
+  const imageUrl = mainImageUrl;
   const price = product.updated_price_website || 0;
   const taglines = product.information_taglines?.split("   ").filter(Boolean) || [];
 

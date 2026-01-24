@@ -1,31 +1,34 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-// Cache for product images from Open Food Facts API
+// Cache for product images (from `newProducts.image_url`)
 const imageCache = new Map<string, string>();
 
-// Fetch product image URL from Open Food Facts API
+// Fetch product image URL from `newProducts.image_url` via Supabase
 export const fetchProductImage = async (barcode: string): Promise<string> => {
-  // Check cache first
-  if (imageCache.has(barcode)) {
-    return imageCache.get(barcode)!;
-  }
+  if (imageCache.has(barcode)) return imageCache.get(barcode)!;
 
   try {
-    const response = await fetch(
-      `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
-    );
-    const data = await response.json();
+    // newProducts stores Barcode as a numeric column named `Barcode` (note the capital B).
+    // Accept either a numeric string or number; convert to number when possible so PostgREST matches correctly.
+    const parsed = barcode && /^[0-9]+$/.test(barcode) ? Number(barcode) : barcode;
+    const { data, error } = await supabase
+      .from("newProducts")
+      .select("image_url")
+      .eq("Barcode", parsed as any)
+      .limit(1)
+      .single();
 
-    if (data.status === 1 && data.product?.image_url) {
-      const imageUrl = data.product.image_url;
+    if (error) throw error;
+    if (data?.image_url) {
+      const imageUrl = (data as any).image_url as string;
       imageCache.set(barcode, imageUrl);
       return imageUrl;
     }
-  } catch (error) {
-    console.log(`Failed to fetch image for barcode ${barcode}`);
+  } catch (err) {
+    console.log(`Failed to fetch image for barcode ${barcode}`, err);
   }
 
-  // Fallback to placeholder
   return "/placeholder.svg";
 };
 
@@ -54,6 +57,6 @@ export const getCachedImageUrl = (barcode: string): string => {
 
 // Prefetch images for multiple products
 export const prefetchProductImages = async (barcodes: string[]): Promise<void> => {
-  const uncachedBarcodes = barcodes.filter(b => !imageCache.has(b));
-  await Promise.all(uncachedBarcodes.map(b => fetchProductImage(b)));
+  const uncachedBarcodes = barcodes.filter((b) => !imageCache.has(b));
+  await Promise.all(uncachedBarcodes.map((b) => fetchProductImage(b)));
 };

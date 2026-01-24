@@ -23,13 +23,7 @@ export interface DbCategory {
   created_at: string;
 }
 
-// Generate OpenFoodFacts image URL from barcode
-export const getProductImageUrl = (barcode: string): string => {
-  if (barcode.length >= 13) {
-    return `https://images.openfoodfacts.org/images/products/${barcode.slice(0, 3)}/${barcode.slice(3, 6)}/${barcode.slice(6, 9)}/${barcode.slice(9)}/front_de.3.400.jpg`;
-  }
-  return `https://images.openfoodfacts.org/images/products/${barcode}/front_de.3.400.jpg`;
-};
+
 
 export const useProducts = (options?: { 
   categorySlug?: string; 
