@@ -90,7 +90,8 @@ export const getCategorySlugFromGroupCode = (groupCode: string | null): string |
 
 // Get category by slug
 export const getCategoryBySlug = (slug: string) => {
-  return categories.find(c => c.slug === slug);
+  const normalizedSlug = slug.toLowerCase().trim();
+  return categories.find(c => c.slug.toLowerCase() === normalizedSlug);
 };
 
 // Get category by ID

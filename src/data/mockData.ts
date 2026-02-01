@@ -20,7 +20,7 @@ export const categories: Category[] = [
   { id: "fresh-chilled", slug: "fresh-chilled", name: "Fresh & Chilled", productCount: 120 },
   { id: "meat-fish", slug: "meat-fish", name: "Meat & Fish", productCount: 80 },
   { id: "drinks", slug: "drinks", name: "Drinks", productCount: 150 },
-  { id: "bakery", slug: "bakery ", name: "Bakery", productCount: 45 },
+  { id: "bakery", slug: "bakery", name: "Bakery", productCount: 45 },
   { id: "snacking", slug: "snacking", name: "Snacking", productCount: 90 },
   { id: "food-cupboard", slug: "food-cupboard", name: "Food Cupboard", productCount: 200 },
   { id: "baby-child", slug: "baby-child", name: "Baby & Child", productCount: 30 },

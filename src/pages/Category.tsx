@@ -31,10 +31,18 @@ import { productBelongsToCategory, categorizeProduct } from "@/utils/productCate
 const CategoryProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
   const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
-  // Use group_code-based categorization if available, otherwise fall back to name-based
-  const categorySlug = product.group_code 
-    ? (getCategorySlugFromGroupCode(product.group_code) || categorizeProduct(product.name))
-    : categorizeProduct(product.name);
+  // Use Category Level 1 if available, then group_code, then name-based categorization
+  const categoryLevel1 = (product as any)["Category Level 1"];
+  let categorySlug = "";
+  
+  if (categoryLevel1) {
+    categorySlug = getCategorySlugFromGroupCode(categoryLevel1) || categorizeProduct(product.name);
+  } else if (product.group_code) {
+    categorySlug = getCategorySlugFromGroupCode(product.group_code) || categorizeProduct(product.name);
+  } else {
+    categorySlug = categorizeProduct(product.name);
+  }
+  
   const productPath = buildProductPath(product.id, categorySlug);
 
   const handleAddToCart = () => {
@@ -106,6 +114,8 @@ const Category = () => {
   // Try matching by slug first, then by name
   const category = getCategoryBySlug(lastSlug) || 
     categories.find(c => c.name.toLowerCase() === lastSlug.toLowerCase());
+  
+  console.log("Category lookup - lastSlug:", lastSlug, "found category:", category?.name || "NOT FOUND");
 
   // State
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -134,7 +144,12 @@ const Category = () => {
   if (allProducts.length > 0 && !isLoading) {
     const sample = allProducts.slice(0, 3);
     console.log("Products loaded:", allProducts.length);
-    console.log("Sample products:", sample.map(p => ({ name: p.name, group_code: p.group_code })));
+    console.log("Sample products:", sample.map(p => ({ 
+      name: p.name, 
+      group_code: p.group_code,
+      categoryLevel1: (p as any)["Category Level 1"],
+      categoryLevel2: (p as any)["Category Level 2"]
+    })));
   }
 
   // Use deferred value for filtering to prevent UI blocking
@@ -150,22 +165,50 @@ const Category = () => {
 
     // Get all descendant slugs for this category
     const descendantSlugs = getAllDescendantSlugs(category.id);
-    console.log("Filtering for category:", category.slug, "descendant slugs:", descendantSlugs);
+    console.log("Filtering for category:", category.name, "slug:", category.slug, "descendant slugs:", descendantSlugs);
     console.log("Total products to filter:", deferredProducts.length);
     
     // Filter products that match this category or any of its descendants
     const filtered = deferredProducts.filter((p) => {
-      // First try to use group_code if available
+      // First try to use "Category Level 1" field if available
+      const categoryLevel1 = (p as any)["Category Level 1"];
+      
+      if (categoryLevel1) {
+        // Normalize and check if it matches our category hierarchy
+        const normalizedLevel1 = categoryLevel1.toLowerCase().trim();
+        const normalizedCategoryName = category.name.toLowerCase().trim();
+        
+        console.log("Product:", p.name, "Level1:", categoryLevel1, "normalized:", normalizedLevel1, "category name:", normalizedCategoryName, "match:", normalizedLevel1 === normalizedCategoryName);
+        
+        if (normalizedLevel1 === normalizedCategoryName) {
+          console.log("✓ Matched by Category Level 1");
+          return true;
+        }
+        // Also check against descendant slugs using the mapping
+        const mappedSlug = getCategorySlugFromGroupCode(categoryLevel1);
+        if (mappedSlug && descendantSlugs.includes(mappedSlug)) {
+          console.log("✓ Matched by mapped slug:", mappedSlug);
+          return true;
+        }
+      }
+      
+      // Try to use group_code if available
       if (p.group_code) {
         const groupCodeSlug = getCategorySlugFromGroupCode(p.group_code);
         if (groupCodeSlug && descendantSlugs.includes(groupCodeSlug)) {
+          console.log("✓ Matched by group_code");
           return true;
         }
       }
       
       // Fall back to name-based categorization
       const productCategorySlug = categorizeProduct(p.name);
-      return descendantSlugs.includes(productCategorySlug);
+      if (descendantSlugs.includes(productCategorySlug)) {
+        console.log("✓ Matched by name categorization");
+        return true;
+      }
+      
+      return false;
     });
     
     console.log("Filtered products:", filtered.length, filtered.slice(0, 3));

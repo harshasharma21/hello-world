@@ -12,6 +12,10 @@ export interface DbProduct {
   is_valid_barcode: boolean | null;
   created_at: string;
   updated_at: string;
+  "Category Level 1"?: string | null;
+  "Category Level 2"?: string | null;
+  "Category Level 3"?: string | null;
+  "Category Level 4"?: string | null;
 }
 
 export interface DbCategory {
