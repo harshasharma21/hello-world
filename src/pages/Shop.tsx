@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/pagination";
 import { SlidersHorizontal, Grid3x3, List, Search, ChevronRight, ChevronDown, ShoppingCart } from "lucide-react";
 import { useProductsByCategory, ProductWithCategory } from "@/hooks/useNewProducts";
+import { useProductSearch } from "@/hooks/useProductSearch";
 import { useProductImage } from "@/hooks/useProductImage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -159,6 +160,7 @@ const Shop = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const itemsPerPage = 20;
 
@@ -176,6 +178,14 @@ const Shop = () => {
   // Get category name for query
   const categoryNameForQuery = selectedCategory ? selectedCategory.name : null;
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Fetch products (paginated) from newProducts table with latestCategories
   const startIndex = (currentPage - 1) * itemsPerPage;
   const { data: productsData = { items: [], total: 0 }, isLoading: productsLoading } = useProductsByCategory(
@@ -183,8 +193,19 @@ const Shop = () => {
     itemsPerPage,
     startIndex
   );
-  const products = productsData.items;
-  const totalCount = productsData.total;
+  
+  // Search across ALL products when search query is provided
+  const { data: searchData = { items: [], total: 0 }, isLoading: searchLoading } = useProductSearch({
+    searchQuery: debouncedSearch,
+    limit: 100,
+  });
+
+  // Use search results if searching, otherwise use category results
+  const isSearching = debouncedSearch.trim().length >= 2;
+  const products = isSearching ? searchData.items : productsData.items;
+  const totalCount = isSearching ? searchData.total : productsData.total;
+  const isLoading = isSearching ? searchLoading : productsLoading;
+  
   const queryClient = useQueryClient();
   // Cache totals in sessionStorage to show instant counts while server requests complete
   const cacheKey = categoryNameForQuery ? `shop_total_${categoryNameForQuery}` : `shop_total_all`;
@@ -199,13 +220,13 @@ const Shop = () => {
 
   // Update cache when server returns a non-zero total
   useEffect(() => {
-    if (typeof totalCount === "number" && totalCount > 0) {
+    if (typeof totalCount === "number" && totalCount > 0 && !isSearching) {
       try {
         sessionStorage.setItem(cacheKey, String(totalCount));
       } catch (e) {}
       setCachedTotal(totalCount);
     }
-  }, [totalCount, cacheKey]);
+  }, [totalCount, cacheKey, isSearching]);
   // When category changes, read cached value for new key
   useEffect(() => {
     try {
@@ -216,15 +237,8 @@ const Shop = () => {
     }
   }, [cacheKey]);
 
-  // Filter products by search query (client-side within current page)
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery) return products;
-    const query = searchQuery.toLowerCase();
-    return products.filter(p => 
-      p.name?.toLowerCase().includes(query) ||
-      formatBarcode(p.Barcode).includes(query)
-    );
-  }, [products, searchQuery]);
+  // No need for client-side filtering since search is now server-side
+  const filteredProducts = products;
 
   // Update URL params
   const updateParams = (updates: Record<string, string | null>) => {
@@ -610,7 +624,7 @@ const Shop = () => {
                 </div>
               </div>
 
-              {productsLoading ? (
+              {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {[...Array(8)].map((_, i) => (
                     <div key={i} className="bg-card rounded-lg border overflow-hidden">
