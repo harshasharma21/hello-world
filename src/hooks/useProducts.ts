@@ -34,26 +34,50 @@ export const useProducts = (options?: {
   return useQuery({
     queryKey: ["products", options],
     queryFn: async () => {
+      // When searching, we need to fetch ALL products to search across the entire dataset
+      // Build query without limits first if searching
       let query = supabase
         .from("products")
-        .select("*")
+        .select("*", { count: "exact" })
         .order("name");
 
       if (options?.groupCode) {
         query = query.eq("group_code", options.groupCode);
       }
 
-      if (options?.search) {
-        query = query.ilike("name", `%${options.search}%`);
+      // Fetch data
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
       }
 
+      console.log("Total products fetched:", data?.length || 0, "Total count:", count);
+
+      // If search is provided, filter client-side
+      if (options?.search && options.search.trim()) {
+        const searchTerm = options.search.trim();
+        console.log("Searching for:", searchTerm);
+        
+        const filtered = data?.filter(product => 
+          (product.name && product.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
+        ) || [];
+
+        console.log("Search results:", filtered.length, "for search:", searchTerm);
+        
+        if (options?.limit) {
+          return filtered.slice(0, options.limit);
+        }
+        return filtered;
+      }
+
+      // If no search but limit is provided, apply limit to non-search results
       if (options?.limit) {
-        query = query.limit(options.limit);
+        return data?.slice(0, options.limit) || [];
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
       return data as DbProduct[];
     },
   });

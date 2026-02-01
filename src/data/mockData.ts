@@ -20,11 +20,11 @@ export const categories: Category[] = [
   { id: "fresh-chilled", slug: "fresh-chilled", name: "Fresh & Chilled", productCount: 120 },
   { id: "meat-fish", slug: "meat-fish", name: "Meat & Fish", productCount: 80 },
   { id: "drinks", slug: "drinks", name: "Drinks", productCount: 150 },
-  { id: "bakery", slug: "bakery", name: "Bakery", productCount: 45 },
+  { id: "bakery", slug: "bakery ", name: "Bakery", productCount: 45 },
   { id: "snacking", slug: "snacking", name: "Snacking", productCount: 90 },
   { id: "food-cupboard", slug: "food-cupboard", name: "Food Cupboard", productCount: 200 },
   { id: "baby-child", slug: "baby-child", name: "Baby & Child", productCount: 30 },
-  { id: "hygiene-health-pets", slug: "hygiene-health-pets", name: "Hygiene, Health & Pets", productCount: 50 },
+  { id: "hygiene-health-pets", slug: "hygiene-health-pets", name: "Hygiene Health & Pets", productCount: 50 },
 
   // Fresh & Chilled subcategories
   { id: "dairy", slug: "dairy", name: "Dairy", parentId: "fresh-chilled", productCount: 60 },
@@ -102,8 +102,8 @@ export const categories: Category[] = [
   { id: "cured-smoked", slug: "cured-smoked", name: "Cured & Smoked", parentId: "sausages-frankfurters", productCount: 7 },
 
   // Drinks subcategories
-  { id: "beer-wine-spirits", slug: "beer-wine-spirits", name: "Beer, Wine & Spirits", parentId: "drinks", productCount: 40 },
-  { id: "juice-smoothies-shots", slug: "juice-smoothies-shots", name: "Juice, Smoothies & Shots", parentId: "drinks", productCount: 25 },
+  { id: "beer-wine-spirits", slug: "beer-wine-spirits", name: "Beer Wine & Spirits", parentId: "drinks", productCount: 40 },
+  { id: "juice-smoothies-shots", slug: "juice-smoothies-shots", name: "Juice Smoothies & Shots", parentId: "drinks", productCount: 25 },
   { id: "milk-alternatives", slug: "milk-alternatives", name: "Milk & Alternatives", parentId: "drinks", productCount: 20 },
   { id: "soft-drinks-better", slug: "soft-drinks-better", name: "Soft Drinks & Better For You", parentId: "drinks", productCount: 30 },
   { id: "rtd-coffee-tea", slug: "rtd-coffee-tea", name: "RTD Coffee & Tea", parentId: "drinks", productCount: 15 },
@@ -161,7 +161,7 @@ export const categories: Category[] = [
   { id: "wraps-flatbread", slug: "wraps-flatbread", name: "Wraps & Flatbread", parentId: "bakery", productCount: 5 },
   { id: "pitta", slug: "pitta", name: "Pitta", parentId: "bakery", productCount: 3 },
   { id: "naan", slug: "naan", name: "Naan", parentId: "bakery", productCount: 4 },
-  { id: "breakfast-bakery", slug: "breakfast-bakery", name: "Breakfast", parentId: "bakery", productCount: 6 },
+  { id: "breakfast", slug: "breakfast", name: "Breakfast", parentId: "bakery", productCount: 6 },
   { id: "brioche", slug: "brioche", name: "Brioche", parentId: "bakery", productCount: 3 },
 
   // Snacking subcategories
@@ -187,20 +187,20 @@ export const categories: Category[] = [
 
   // Food Cupboard subcategories
   { id: "oils-vinegar", slug: "oils-vinegar", name: "Oils & Vinegar", parentId: "food-cupboard", productCount: 25 },
-  { id: "pasta-rice-noodles", slug: "pasta-rice-noodles", name: "Pasta, Rice & Noodles", parentId: "food-cupboard", productCount: 30 },
+  { id: "pasta-rice-noodles", slug: "pasta-rice-noodles", name: "Pasta Rice & Noodles", parentId: "food-cupboard", productCount: 30 },
   { id: "sauces-pastes", slug: "sauces-pastes", name: "Sauces & Pastes", parentId: "food-cupboard", productCount: 35 },
   { id: "syrup-honey", slug: "syrup-honey", name: "Syrup & Honey", parentId: "food-cupboard", productCount: 12 },
-  { id: "table-sauces-condiments", slug: "table-sauces-condiments", name: "Table Sauces, Condiments & Dressings", parentId: "food-cupboard", productCount: 20 },
+  { id: "table-sauces-condiments", slug: "table-sauces-condiments", name: "Table Sauces Condiments & Dressings", parentId: "food-cupboard", productCount: 20 },
   { id: "fc-ready-meals", slug: "fc-ready-meals", name: "Ready Meals & Meal Kits", parentId: "food-cupboard", productCount: 15 },
   { id: "biscuits-cakes", slug: "biscuits-cakes", name: "Biscuits & Cakes", parentId: "food-cupboard", productCount: 18 },
   { id: "oriental-dry-foods", slug: "oriental-dry-foods", name: "Oriental Dry Foods", parentId: "food-cupboard", productCount: 12 },
   { id: "breakfast-cereals", slug: "breakfast-cereals", name: "Breakfast Cereals", parentId: "food-cupboard", productCount: 15 },
   { id: "crackers-crispbreads", slug: "crackers-crispbreads", name: "Crackers & Crispbreads", parentId: "food-cupboard", productCount: 10 },
-  { id: "cooking-baking-ingredients", slug: "cooking-baking-ingredients", name: "Cooking, Baking & Ingredients", parentId: "food-cupboard", productCount: 20 },
-  { id: "coffee-tea-hot-drinks", slug: "coffee-tea-hot-drinks", name: "Coffee, Tea & Hot Drinks", parentId: "food-cupboard", productCount: 25 },
-  { id: "fruit-veg-salad-pulses", slug: "fruit-veg-salad-pulses", name: "Fruit, Veg, Salad & Pulses", parentId: "food-cupboard", productCount: 15 },
+  { id: "cooking-baking-ingredients", slug: "cooking-baking-ingredients", name: "Cooking Baking & Ingredients", parentId: "food-cupboard", productCount: 20 },
+  { id: "coffee-tea-hot-drinks", slug: "coffee-tea-hot-drinks", name: "Coffee Tea & Hot Drinks", parentId: "food-cupboard", productCount: 25 },
+  { id: "fruit-veg-salad-pulses", slug: "fruit-veg-salad-pulses", name: "Fruit Veg Salad & Pulses", parentId: "food-cupboard", productCount: 15 },
   { id: "jam-spreads", slug: "jam-spreads", name: "Jam & Spreads", parentId: "food-cupboard", productCount: 12 },
-  { id: "fc-meat-fish-alts", slug: "fc-meat-fish-alts", name: "Meat, Fish & Alts", parentId: "food-cupboard", productCount: 10 },
+  { id: "fc-meat-fish-alts", slug: "fc-meat-fish-alts", name: "Meat Fish & Alts", parentId: "food-cupboard", productCount: 10 },
 
   // Oils & Vinegar subcategories
   { id: "olive-oil", slug: "olive-oil", name: "Olive Oil", parentId: "oils-vinegar", productCount: 6 },
@@ -220,7 +220,7 @@ export const categories: Category[] = [
 
   // Sauces & Pastes subcategories
   { id: "oriental", slug: "oriental", name: "Oriental", parentId: "sauces-pastes", productCount: 10 },
-  { id: "pasta-passata-pesto", slug: "pasta-passata-pesto", name: "Pasta, Passata & Pesto", parentId: "sauces-pastes", productCount: 12 },
+  { id: "pasta-passata-pesto", slug: "pasta-passata-pesto", name: "Pasta Passata & Pesto", parentId: "sauces-pastes", productCount: 12 },
   { id: "mexican", slug: "mexican", name: "Mexican", parentId: "sauces-pastes", productCount: 5 },
   { id: "south-asia-africa", slug: "south-asia-africa", name: "South Asia to Africa", parentId: "sauces-pastes", productCount: 8 },
 
@@ -262,7 +262,7 @@ export const categories: Category[] = [
 
   // Hygiene, Health & Pets subcategories
   { id: "cleaning", slug: "cleaning", name: "Cleaning", parentId: "hygiene-health-pets", productCount: 15 },
-  { id: "health-wellbeing-beauty", slug: "health-wellbeing-beauty", name: "Health, Wellbeing & Beauty", parentId: "hygiene-health-pets", productCount: 20 },
+  { id: "health-wellbeing-beauty", slug: "health-wellbeing-beauty", name: "Health Wellbeing & Beauty", parentId: "hygiene-health-pets", productCount: 20 },
   { id: "pet-food", slug: "pet-food", name: "Pet Food", parentId: "hygiene-health-pets", productCount: 15 },
 
   // Health, Wellbeing & Beauty subcategories

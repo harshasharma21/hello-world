@@ -71,7 +71,7 @@ const categoryKeywords: { slug: string; keywords: string[] }[] = [
   { slug: "protein-shakes", keywords: ["protein shake", "protein drink", "whey drink"] },
 
   // ===== BAKERY SUBCATEGORIES =====
-  { slug: "bread", keywords: ["bread", "loaf", "wholemeal bread", "white bread", "brown bread", "sourdough", "seeded bread", "rye bread", "warburtons", "hovis", "kingsmill"] },
+  { slug: "bread", keywords: ["bread", "loaf", "wholemeal bread", "white bread", "brown bread", "sourdough", "seeded bread", "rye bread", "warburtons", "hovis", "kingsmill", "ciabatta"] },
   { slug: "rolls-bagels", keywords: ["roll", "bap", "bun", "bagel", "brioche bun"] },
   { slug: "baguettes", keywords: ["baguette", "french stick"] },
   { slug: "wraps-flatbread", keywords: ["wrap", "tortilla wrap", "flatbread", "focaccia"] },

@@ -42,10 +42,12 @@ export const useNewProducts = (options: UseNewProductsOptions = {}) => {
         .not("name", "is", null);
 
       if (searchQuery) {
+        // Search across entire newProducts table for matching names
         query = query.ilike("name", `%${searchQuery}%`);
+      } else {
+        // Apply pagination only for non-search queries
+        query = query.range(offset, offset + limit - 1);
       }
-
-      query = query.range(offset, offset + limit - 1);
 
       const { data: products, error: productsError } = await query;
 
@@ -211,14 +213,12 @@ export const useProductsByCategory = (categoryName: string | null, limit = 50, o
           "Category Level 4",
         ];
 
-        // Build a single OR filter to run on latestCategories so we can page results there
-        // This avoids building a giant `.in(...)` array in the newProducts request.
+        // Build OR filters for each level
         const orConditions = levels
-          .map((l) => `"${l}".ilike.%${normalized}%`)
+          .map((l) => `"${l}".eq.${normalized}`)
           .join(",");
 
-        // Get total matching rows (best-effort). This counts matching latestCategories rows;
-        // if your latestCategories table has one row per product this is exact.
+        // Get total matching rows
         const countRes = await supabase
           .from("latestCategories")
           .select("\"Product Name\"", { head: true, count: "exact" })

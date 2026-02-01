@@ -167,8 +167,10 @@ const Shop = () => {
   let selectedCategory = null;
   
   if (pathParts.length > 0 && pathParts[0] !== "product") {
-    const lastPart = pathParts[pathParts.length - 1];
-    selectedCategory = getCategoryBySlug(lastPart);
+    const lastPart = decodeURIComponent(pathParts[pathParts.length - 1]);
+    // Try matching by slug first, then by name
+    selectedCategory = getCategoryBySlug(lastPart) || 
+      categories.find(c => c.name.toLowerCase() === lastPart.toLowerCase());
   }
 
   // Get category name for query
@@ -574,7 +576,7 @@ const Shop = () => {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <p className="text-xs text-muted-foreground">
-                  Showing {currentProducts.length} of {cachedTotal ?? totalCount ?? sortedProducts.length} products
+                  {/* Showing {currentProducts.length} of {cachedTotal ?? totalCount ?? sortedProducts.length} products */}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex border border-border rounded-md">

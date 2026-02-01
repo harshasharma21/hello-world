@@ -22,6 +22,8 @@ import {
   buildProductPath,
   getAllDescendantSlugs,
   getSubcategories,
+  getCategorySlugFromGroupCode,
+  categorySlugToGroupCodes,
 } from "@/utils/categoryMapping";
 import { productBelongsToCategory, categorizeProduct } from "@/utils/productCategorizer";
 
@@ -29,7 +31,10 @@ import { productBelongsToCategory, categorizeProduct } from "@/utils/productCate
 const CategoryProductCard = ({ product }: { product: DbProduct }) => {
   const { addItem } = useCart();
   const { imageUrl, isLoading: imageLoading } = useProductImage(product.barcode);
-  const categorySlug = categorizeProduct(product.name);
+  // Use group_code-based categorization if available, otherwise fall back to name-based
+  const categorySlug = product.group_code 
+    ? (getCategorySlugFromGroupCode(product.group_code) || categorizeProduct(product.name))
+    : categorizeProduct(product.name);
   const productPath = buildProductPath(product.id, categorySlug);
 
   const handleAddToCart = () => {
@@ -97,8 +102,10 @@ const Category = () => {
   // Note: Product pages are now handled by ShopRouter
 
   // Get the last part to find current category
-  const lastSlug = pathParts[pathParts.length - 1];
-  const category = getCategoryBySlug(lastSlug);
+  const lastSlug = decodeURIComponent(pathParts[pathParts.length - 1]);
+  // Try matching by slug first, then by name
+  const category = getCategoryBySlug(lastSlug) || 
+    categories.find(c => c.name.toLowerCase() === lastSlug.toLowerCase());
 
   // State
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -123,22 +130,46 @@ const Category = () => {
     search: searchQuery || undefined,
   });
 
+  // Debug: log products
+  if (allProducts.length > 0 && !isLoading) {
+    const sample = allProducts.slice(0, 3);
+    console.log("Products loaded:", allProducts.length);
+    console.log("Sample products:", sample.map(p => ({ name: p.name, group_code: p.group_code })));
+  }
+
   // Use deferred value for filtering to prevent UI blocking
   const deferredProducts = useDeferredValue(allProducts);
   const isFiltering = deferredProducts !== allProducts;
 
   // Filter products by keyword-based categorization
   const categoryProducts = useMemo(() => {
-    if (!category) return [];
+    if (!category) {
+      console.log("No category found");
+      return [];
+    }
 
     // Get all descendant slugs for this category
     const descendantSlugs = getAllDescendantSlugs(category.id);
+    console.log("Filtering for category:", category.slug, "descendant slugs:", descendantSlugs);
+    console.log("Total products to filter:", deferredProducts.length);
     
     // Filter products that match this category or any of its descendants
-    return deferredProducts.filter((p) => {
+    const filtered = deferredProducts.filter((p) => {
+      // First try to use group_code if available
+      if (p.group_code) {
+        const groupCodeSlug = getCategorySlugFromGroupCode(p.group_code);
+        if (groupCodeSlug && descendantSlugs.includes(groupCodeSlug)) {
+          return true;
+        }
+      }
+      
+      // Fall back to name-based categorization
       const productCategorySlug = categorizeProduct(p.name);
       return descendantSlugs.includes(productCategorySlug);
     });
+    
+    console.log("Filtered products:", filtered.length, filtered.slice(0, 3));
+    return filtered;
   }, [deferredProducts, category]);
 
   // Build breadcrumb chain
@@ -424,6 +455,11 @@ const Category = () => {
 
         {/* Products with Sidebar */}
         <section className="container mx-auto px-4 py-8">
+          {/* DEBUG */}
+          <div style={{ display: "none" }}>
+            allProducts: {allProducts.length}, category: {category?.slug}, isLoading: {isLoading ? "true" : "false"}
+          </div>
+
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Mobile Filter Button */}
             <div className="lg:hidden">

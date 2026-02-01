@@ -140,7 +140,7 @@ const rawCategoryTree = {
       name: "Drinks",
       children: [
         {
-          name: "Beer, Wine & Spirits",
+          name: "Beer & Wine",
           children: [
             {
               name: "Beer & Cider",
